@@ -7,16 +7,40 @@
  * Acts as the central hub for the application.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import SummaryCards from './SummaryCards';
 import SpendingChart from './SpendingChart';
 import RecentTransactions from './RecentTransactions';
 import { PieChart, Pie, ResponsiveContainer, Cell, Legend, Tooltip } from 'recharts';
 import CustomCard, { CardHeader, CardTitle, CardContent } from '@/components/ui/CustomCard';
-import { categorySpending } from '@/utils/demoData';
 import { formatCurrency } from '@/utils/formatters';
+import { useYearlyFinancials, useMonthlySpending } from '@/hooks/useSupabaseQueries';
 
 const Dashboard: React.FC = () => {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  
+  const [selectedYear] = useState(currentYear);
+  const [selectedMonth] = useState(currentMonth);
+  
+  // Fetch yearly financial data for the chart
+  const { data: yearlyData = [], isLoading: isLoadingYearlyData } = useYearlyFinancials(selectedYear);
+  
+  // Fetch monthly spending by category
+  const { data: categorySpending = [], isLoading: isLoadingCategoryData } = useMonthlySpending(selectedMonth, selectedYear);
+
+  // Calculate summary metrics
+  const currentMonthData = yearlyData.find(
+    (item) => item.month === new Date(selectedYear, selectedMonth - 1, 1).toLocaleString('default', { month: 'short' })
+  );
+  
+  const income = currentMonthData?.income || 0;
+  const expenses = currentMonthData?.expenses || 0;
+  const balance = income - expenses;
+  
+  // Get total budget (this could be improved by fetching actual budget data)
+  const budget = expenses * 1.2; // Just an example calculation
+
   // Custom tooltip formatter for the pie chart
   const customTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -62,16 +86,21 @@ const Dashboard: React.FC = () => {
       
       {/* Summary Cards */}
       <SummaryCards 
-        income={3450.00} 
-        expenses={2135.75} 
-        balance={1314.25} 
-        budget={2500.00} 
+        income={income} 
+        expenses={expenses} 
+        balance={balance} 
+        budget={budget} 
+        isLoading={isLoadingYearlyData}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Spending Chart */}
         <div className="lg:col-span-2">
-          <SpendingChart chartType="area" />
+          <SpendingChart 
+            chartType="area" 
+            data={yearlyData} 
+            isLoading={isLoadingYearlyData} 
+          />
         </div>
         
         {/* Category Chart */}
@@ -81,34 +110,47 @@ const Dashboard: React.FC = () => {
               <CardTitle>Spending by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categorySpending}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="amount"
-                      nameKey="category"
-                      animationDuration={1000}
-                      animationBegin={200}
-                    >
-                      {categorySpending.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.color} 
-                          stroke="transparent" 
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={customTooltip} />
-                    <Legend content={renderLegend} layout="horizontal" verticalAlign="bottom" align="center" />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+              {isLoadingCategoryData ? (
+                <div className="h-64 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : categorySpending.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-center">
+                  <div className="text-muted-foreground">
+                    <p>No spending data available for this month.</p>
+                    <p className="text-sm mt-2">Add transactions to see your spending breakdown.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categorySpending}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="amount"
+                        nameKey="category"
+                        animationDuration={1000}
+                        animationBegin={200}
+                      >
+                        {categorySpending.map((entry: any, index: number) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={entry.color} 
+                            stroke="transparent" 
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip content={customTooltip} />
+                      <Legend content={renderLegend} layout="horizontal" verticalAlign="bottom" align="center" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </CustomCard>
         </div>

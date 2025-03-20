@@ -24,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { categories } from '@/utils/demoData';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
+import { useCategories, useCreateTransaction } from '@/hooks/useSupabaseQueries';
 
 interface TransactionFormProps {
   onSubmit?: (data: any) => void;
@@ -36,12 +36,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onSubmit,
   onCancel
 }) => {
+  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
+  const createTransactionMutation = useCreateTransaction();
+  
   const [transactionData, setTransactionData] = useState({
     description: '',
     amount: '',
-    date: new Date().toISOString().split('T')[0],
-    categoryId: '',
-    type: 'expense',
+    transaction_date: new Date().toISOString().split('T')[0],
+    category_id: '',
+    transaction_type: 'expense',
     notes: ''
   });
 
@@ -54,24 +57,36 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     setTransactionData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit({
-        ...transactionData,
+    
+    try {
+      await createTransactionMutation.mutateAsync({
+        description: transactionData.description,
         amount: parseFloat(transactionData.amount),
-        id: Date.now().toString()
+        transaction_date: transactionData.transaction_date,
+        category_id: transactionData.category_id || null,
+        transaction_type: transactionData.transaction_type as 'income' | 'expense',
+        notes: transactionData.notes || null
       });
+      
+      // Reset form
+      setTransactionData({
+        description: '',
+        amount: '',
+        transaction_date: new Date().toISOString().split('T')[0],
+        category_id: '',
+        transaction_type: 'expense',
+        notes: ''
+      });
+      
+      // Call onSubmit if provided
+      if (onSubmit) {
+        onSubmit(transactionData);
+      }
+    } catch (error) {
+      console.error('Error creating transaction:', error);
     }
-    // Reset form
-    setTransactionData({
-      description: '',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      categoryId: '',
-      type: 'expense',
-      notes: ''
-    });
   };
 
   return (
@@ -114,12 +129,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="transaction_date">Date</Label>
               <Input
-                id="date"
-                name="date"
+                id="transaction_date"
+                name="transaction_date"
                 type="date"
-                value={transactionData.date}
+                value={transactionData.transaction_date}
                 onChange={handleChange}
                 required
               />
@@ -129,10 +144,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           {/* Category and Type (side by side) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="categoryId">Category</Label>
+              <Label htmlFor="category_id">Category</Label>
               <Select
-                value={transactionData.categoryId}
-                onValueChange={(value) => handleSelectChange('categoryId', value)}
+                value={transactionData.category_id}
+                onValueChange={(value) => handleSelectChange('category_id', value)}
+                disabled={isLoadingCategories}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
@@ -140,20 +156,31 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Categories</SelectLabel>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
+                    <SelectItem value="">Uncategorized</SelectItem>
+                    {categories
+                      .filter(cat => 
+                        transactionData.transaction_type === 'income' 
+                          ? cat.is_income 
+                          : !cat.is_income
+                      )
+                      .map((category: any) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type">Transaction Type</Label>
+              <Label htmlFor="transaction_type">Transaction Type</Label>
               <Select
-                value={transactionData.type}
-                onValueChange={(value) => handleSelectChange('type', value)}
+                value={transactionData.transaction_type}
+                onValueChange={(value) => {
+                  handleSelectChange('transaction_type', value);
+                  // Clear category when changing type
+                  setTransactionData(prev => ({ ...prev, category_id: '' }));
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -188,7 +215,12 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               Cancel
             </Button>
           )}
-          <Button type="submit">Add Transaction</Button>
+          <Button 
+            type="submit" 
+            disabled={createTransactionMutation.isPending}
+          >
+            {createTransactionMutation.isPending ? 'Saving...' : 'Add Transaction'}
+          </Button>
         </CardFooter>
       </form>
     </CustomCard>
