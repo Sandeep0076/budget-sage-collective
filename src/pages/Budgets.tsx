@@ -1,4 +1,11 @@
 
+/**
+ * Budgets Page
+ * 
+ * Displays budget information, including current budget status,
+ * spending allocation by category, and progress toward budget goals.
+ */
+
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import BudgetOverview from '@/components/budgets/BudgetOverview';

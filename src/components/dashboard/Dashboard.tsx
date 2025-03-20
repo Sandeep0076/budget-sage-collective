@@ -1,4 +1,12 @@
 
+/**
+ * Dashboard Component
+ * 
+ * Main dashboard view that displays financial summary cards,
+ * spending charts, category breakdown, and recent transactions.
+ * Acts as the central hub for the application.
+ */
+
 import React from 'react';
 import SummaryCards from './SummaryCards';
 import SpendingChart from './SpendingChart';

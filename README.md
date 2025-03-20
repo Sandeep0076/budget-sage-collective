@@ -1,69 +1,62 @@
-# Welcome to your Lovable project
 
-## Project info
+# Budget Sage: Personal Finance Tracker
 
-**URL**: https://lovable.dev/projects/0b4d9187-d768-4aa4-8e76-1aacfa0b53e8
+## Overview
+Budget Sage is a comprehensive personal finance tracker that helps users manage their finances, track expenses, visualize spending patterns, and set budgets. The application provides an intuitive interface for monitoring financial health and making informed decisions about spending and saving.
 
-## How can I edit this code?
+## Features
+- **Dashboard**: Get a quick overview of your financial health with summary cards and visualizations
+- **Transaction Management**: Add, edit, and categorize expenses and income
+- **Budget Tracking**: Set category-based budgets and monitor your spending against them
+- **Visualization**: View your spending patterns through interactive charts and graphs
+- **Settings**: Customize your experience with personal preferences
 
-There are several ways of editing your application.
+## Technology Stack
+- **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
+- **State Management**: React hooks for local state
+- **Data Visualization**: Recharts for interactive charts
+- **Backend**: Supabase for authentication, database, and storage
+- **Deployment**: Vite for development and building
 
-**Use Lovable**
+## Project Setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0b4d9187-d768-4aa4-8e76-1aacfa0b53e8) and start prompting.
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+### Installation
+```bash
+# Clone the repository
+git clone <repository-url>
 
-**Use your preferred IDE**
+# Navigate to the project directory
+cd budget-sage
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Install dependencies
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
+- `src/`: Source code
+  - `components/`: Reusable UI components
+    - `dashboard/`: Dashboard-related components
+    - `transactions/`: Transaction-related components
+    - `budgets/`: Budget-related components
+    - `layout/`: Layout components
+    - `ui/`: UI components (buttons, cards, etc.)
+  - `pages/`: Main application pages
+  - `utils/`: Utility functions
+  - `integrations/`: Integration with external services (Supabase)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/0b4d9187-d768-4aa4-8e76-1aacfa0b53e8) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.

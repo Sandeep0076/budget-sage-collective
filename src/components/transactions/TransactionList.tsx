@@ -1,4 +1,12 @@
 
+/**
+ * TransactionList Component
+ * 
+ * Displays a filterable and searchable list of financial transactions.
+ * Includes sorting, filtering, and pagination capabilities.
+ * Also provides options to edit or delete transactions.
+ */
+
 import React, { useState } from 'react';
 import { transactions, categories } from '@/utils/demoData';
 import { formatCurrency, formatDate } from '@/utils/formatters';

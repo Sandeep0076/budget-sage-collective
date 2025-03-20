@@ -1,4 +1,12 @@
 
+/**
+ * Settings Page
+ * 
+ * Allows users to manage account settings, preferences, and data.
+ * Includes options for profile information, account preferences,
+ * and data management.
+ */
+
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/CustomCard';

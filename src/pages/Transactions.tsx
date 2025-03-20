@@ -1,4 +1,12 @@
 
+/**
+ * Transactions Page
+ * 
+ * Allows users to view, add, edit, and delete financial transactions.
+ * Includes a transaction list with filtering capabilities and a form
+ * for adding new transactions.
+ */
+
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import TransactionList from '@/components/transactions/TransactionList';

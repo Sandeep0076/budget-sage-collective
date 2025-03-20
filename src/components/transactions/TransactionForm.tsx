@@ -1,4 +1,15 @@
 
+/**
+ * TransactionForm Component
+ * 
+ * Form for adding or editing financial transactions.
+ * Collects transaction details like description, amount,
+ * category, date, and type (income or expense).
+ * 
+ * @param onSubmit - Callback function when form is submitted
+ * @param onCancel - Callback function when form is cancelled
+ */
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

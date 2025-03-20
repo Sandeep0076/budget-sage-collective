@@ -1,4 +1,12 @@
 
+/**
+ * RecentTransactions Component
+ * 
+ * Displays a list of the most recent financial transactions.
+ * Shows transaction type, amount, category, and date.
+ * Includes a quick link to add new transactions.
+ */
+
 import React from 'react';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import { transactions, categories } from '@/utils/demoData';
