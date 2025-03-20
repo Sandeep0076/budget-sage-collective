@@ -1,3 +1,4 @@
+
 /**
  * BudgetOverview Component
  * 
@@ -39,17 +40,17 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
   const upsertBudgetMutation = useUpsertBudget();
 
   // Total budget and spending
-  const totalBudget = budgets.reduce((acc: number, budget: any) => acc + Number(budget.amount), 0);
+  const totalBudget = budgets.reduce((acc: number, budget: any) => acc + Number(budget.amount || 0), 0);
   
   // Calculate total spent by summing all spending data
-  const totalSpent = spending.reduce((acc: number, cat: any) => acc + Number(cat.amount), 0);
+  const totalSpent = spending.reduce((acc: number, cat: any) => acc + Number(cat.amount || 0), 0);
   
   const overallPercentage = calculatePercentage(totalSpent, totalBudget);
   
   // Function to get spending for a specific category
   const getCategorySpending = (categoryId: string) => {
     const category = spending.find((s: any) => s.categoryId === categoryId);
-    return category ? Number(category.amount) : 0;
+    return category ? Number(category.amount || 0) : 0;
   };
   
   // Handle budget form submission
@@ -252,7 +253,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
               <div className="space-y-4">
                 {budgets.map((budget: any) => {
                   const spent = getCategorySpending(budget.category_id);
-                  const percentage = calculatePercentage(spent, Number(budget.amount));
+                  const percentage = calculatePercentage(spent, Number(budget.amount || 0));
                   const colorClass = getBudgetColorClass(percentage);
                   const categoryName = budget.categories?.name || 'Uncategorized';
                   
@@ -263,7 +264,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
                           <div className="flex justify-between mb-1">
                             <span className="text-sm font-medium">{categoryName}</span>
                             <span className={`text-sm font-medium ${colorClass}`}>
-                              {formatCurrency(spent)} / {formatCurrency(Number(budget.amount))}
+                              {formatCurrency(spent)} / {formatCurrency(Number(budget.amount || 0))}
                             </span>
                           </div>
                           <Progress value={percentage * 100} className="h-2" />

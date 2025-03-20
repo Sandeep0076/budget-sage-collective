@@ -64,7 +64,7 @@ const SpendingChart: React.FC<SpendingChartProps> = ({
     };
     
     const lineProps = {
-      type: "monotone",
+      type: "monotone" as const,
       strokeWidth: 2,
       dot: { strokeWidth: 2 },
       activeDot: { r: 6, strokeWidth: 0 },
