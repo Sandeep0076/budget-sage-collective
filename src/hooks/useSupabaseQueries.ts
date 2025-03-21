@@ -191,8 +191,17 @@ export const useCreateTransaction = () => {
       
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Get the month and year from the transaction date
+      const transactionDate = new Date(variables.transaction_date);
+      const month = transactionDate.getMonth() + 1; // JavaScript months are 0-indexed
+      const year = transactionDate.getFullYear();
+      
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlySpending', month, year] });
+      queryClient.invalidateQueries({ queryKey: ['yearlyFinancials', year] });
+      
       toast({
         title: 'Transaction created',
         description: 'Your transaction has been created successfully.',
