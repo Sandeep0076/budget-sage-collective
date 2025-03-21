@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Index from '@/pages/Index';
 import Transactions from '@/pages/Transactions';
 import Budgets from '@/pages/Budgets';
+import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
@@ -65,6 +66,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Budgets />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               } 
             />
