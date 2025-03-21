@@ -60,16 +60,18 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
   const upsertBudgetMutation = useUpsertBudget();
 
   // Total budget and spending with proper type handling
-  const totalBudget = budgets.reduce((acc: number, budget: Budget) => acc + Number(budget.amount || 0), 0);
+  const totalBudget = (budgets as Budget[]).reduce((acc: number, budget: Budget) => acc + Number(budget.amount || 0), 0);
   
   // Calculate total spent by summing all spending data with proper type casting
-  const totalSpent = spending.reduce((acc: number, cat: CategorySpending) => acc + (typeof cat.amount === 'number' ? cat.amount : 0), 0);
+  const totalSpent = (spending as CategorySpending[]).reduce((acc: number, cat: CategorySpending) => {
+    return acc + (typeof cat.amount === 'number' ? cat.amount : 0);
+  }, 0);
   
   const overallPercentage = calculatePercentage(totalSpent, totalBudget);
   
   // Function to get spending for a specific category
   const getCategorySpending = (categoryId: string): number => {
-    const category = spending.find((s: CategorySpending) => s.categoryId === categoryId);
+    const category = (spending as CategorySpending[]).find((s: CategorySpending) => s.categoryId === categoryId);
     return category ? (typeof category.amount === 'number' ? category.amount : 0) : 0;
   };
   
@@ -82,7 +84,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
     }
     
     // Find if there's an existing budget for this category
-    const existingBudget = budgets.find((b: Budget) => b.category_id === selectedCategoryId);
+    const existingBudget = (budgets as Budget[]).find((b: Budget) => b.category_id === selectedCategoryId);
     
     upsertBudgetMutation.mutate({
       id: existingBudget?.id,
@@ -262,7 +264,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
           <div className="space-y-6">
             <h4 className="font-medium text-sm text-muted-foreground mb-4">Budget Breakdown</h4>
             
-            {budgets.length === 0 ? (
+            {(budgets as Budget[]).length === 0 ? (
               <div className="text-center py-6">
                 <p className="text-muted-foreground">No budgets set yet.</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -271,7 +273,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
               </div>
             ) : (
               <div className="space-y-4">
-                {budgets.map((budget: Budget) => {
+                {(budgets as Budget[]).map((budget: Budget) => {
                   const spent = getCategorySpending(budget.category_id);
                   const budgetAmount = typeof budget.amount === 'number' ? budget.amount : 0;
                   const percentage = calculatePercentage(spent, budgetAmount);
