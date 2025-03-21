@@ -13,6 +13,7 @@ import TransactionList from '@/components/transactions/TransactionList';
 import TransactionForm from '@/components/transactions/TransactionForm';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const Transactions = () => {
   const [showForm, setShowForm] = useState(false);
@@ -20,7 +21,10 @@ const Transactions = () => {
   const handleFormSubmit = (data: any) => {
     console.log('Transaction submitted:', data);
     setShowForm(false);
-    // In a real app, this would add the transaction to state or database
+    toast({
+      title: "Transaction added",
+      description: "Your transaction has been added successfully"
+    });
   };
 
   return (

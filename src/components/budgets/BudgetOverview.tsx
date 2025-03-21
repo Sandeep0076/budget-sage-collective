@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 interface BudgetOverviewProps {
   month: number;
@@ -80,16 +81,40 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
     e.preventDefault();
     
     if (!selectedCategoryId || !budgetAmount) {
+      toast({
+        title: "Missing information",
+        description: "Please select a category and enter an amount",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validate amount is a valid number
+    const amount = parseFloat(budgetAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid positive amount",
+        variant: "destructive"
+      });
       return;
     }
     
     // Find if there's an existing budget for this category
     const existingBudget = (budgets as Budget[]).find((b: Budget) => b.category_id === selectedCategoryId);
     
+    console.log('Adding budget:', {
+      id: existingBudget?.id,
+      category_id: selectedCategoryId,
+      amount: amount,
+      month,
+      year
+    });
+    
     upsertBudgetMutation.mutate({
       id: existingBudget?.id,
       category_id: selectedCategoryId,
-      amount: parseFloat(budgetAmount),
+      amount: amount,
       month,
       year
     }, {
@@ -170,7 +195,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
                       value={selectedCategoryId}
                       onValueChange={setSelectedCategoryId}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="category">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -192,6 +217,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
                         id="amount"
                         type="number"
                         step="0.01"
+                        min="0.01"
                         placeholder="0.00"
                         value={budgetAmount}
                         onChange={(e) => setBudgetAmount(e.target.value)}
@@ -204,7 +230,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    disabled={upsertBudgetMutation.isPending}
+                    disabled={upsertBudgetMutation.isPending || !selectedCategoryId || !budgetAmount}
                   >
                     {upsertBudgetMutation.isPending ? 'Saving...' : 'Save'}
                   </Button>

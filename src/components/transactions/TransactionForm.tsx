@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
 import { useCategories, useCreateTransaction } from '@/hooks/useSupabaseQueries';
+import { toast } from '@/hooks/use-toast';
 
 interface TransactionFormProps {
   onSubmit?: (data: any) => void;
@@ -60,10 +61,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate amount is a valid number
+    const amount = parseFloat(transactionData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid positive amount",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       await createTransactionMutation.mutateAsync({
         description: transactionData.description,
-        amount: parseFloat(transactionData.amount),
+        amount: amount,
         transaction_date: transactionData.transaction_date,
         category_id: transactionData.category_id || null,
         transaction_type: transactionData.transaction_type as 'income' | 'expense',
@@ -86,6 +98,11 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       }
     } catch (error) {
       console.error('Error creating transaction:', error);
+      toast({
+        title: "Transaction failed",
+        description: "There was an error creating your transaction",
+        variant: "destructive"
+      });
     }
   };
 
@@ -120,6 +137,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                   name="amount"
                   type="number"
                   step="0.01"
+                  min="0.01"
                   placeholder="0.00"
                   value={transactionData.amount}
                   onChange={handleChange}
@@ -150,7 +168,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 onValueChange={(value) => handleSelectChange('category_id', value)}
                 disabled={isLoadingCategories}
               >
-                <SelectTrigger>
+                <SelectTrigger id="category_id">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -158,7 +176,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                     <SelectLabel>Categories</SelectLabel>
                     <SelectItem value="">Uncategorized</SelectItem>
                     {categories
-                      .filter(cat => 
+                      .filter((cat: any) => 
                         transactionData.transaction_type === 'income' 
                           ? cat.is_income 
                           : !cat.is_income
@@ -182,7 +200,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                   setTransactionData(prev => ({ ...prev, category_id: '' }));
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger id="transaction_type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -217,7 +235,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
           <Button 
             type="submit" 
-            disabled={createTransactionMutation.isPending}
+            disabled={createTransactionMutation.isPending || !transactionData.description || !transactionData.amount}
           >
             {createTransactionMutation.isPending ? 'Saving...' : 'Add Transaction'}
           </Button>

@@ -168,6 +168,11 @@ export const useCreateTransaction = () => {
         throw new Error('Not authenticated');
       }
       
+      console.log('Creating transaction:', {
+        ...transaction,
+        user_id: user.user.id,
+      });
+      
       const { data, error } = await supabase
         .from('transactions')
         .insert([
@@ -179,7 +184,10 @@ export const useCreateTransaction = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
       return data;
     },
@@ -191,6 +199,7 @@ export const useCreateTransaction = () => {
       });
     },
     onError: (error) => {
+      console.error('Transaction creation error:', error);
       toast({
         title: 'Error creating transaction',
         description: error.message,
@@ -250,6 +259,11 @@ export const useUpsertBudget = () => {
         throw new Error('Not authenticated');
       }
       
+      console.log('Upserting budget:', {
+        ...budget,
+        user_id: user.user.id,
+      });
+      
       const { data, error } = await supabase
         .from('budgets')
         .upsert([
@@ -264,7 +278,10 @@ export const useUpsertBudget = () => {
         ])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
       return data;
     },
@@ -278,6 +295,7 @@ export const useUpsertBudget = () => {
       });
     },
     onError: (error) => {
+      console.error('Budget update error:', error);
       toast({
         title: 'Error updating budget',
         description: error.message,
