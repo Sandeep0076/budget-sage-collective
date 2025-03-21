@@ -19,10 +19,10 @@ const CustomCard = ({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border p-5",
-        "bg-card text-card-foreground shadow-subtle transition-all duration-300",
-        hover && "hover:shadow-card hover:-translate-y-1",
-        gradient && "bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950",
+        "relative overflow-hidden rounded-xl border border-white/30 p-5",
+        "bg-background/30 text-white glass-effect shadow-subtle transition-all duration-300",
+        hover && "hover:shadow-glow hover:-translate-y-1 hover:border-primary/30",
+        gradient && "bg-gradient-to-br from-primary/20 to-secondary/20",
         className
       )}
       {...props}
@@ -55,7 +55,7 @@ export const CardTitle = ({
   return (
     <h3
       className={cn(
-        "text-lg font-semibold leading-none tracking-tight",
+        "text-lg font-semibold leading-none tracking-tight text-white",
         className
       )}
       {...props}
@@ -72,7 +72,7 @@ export const CardDescription = ({
 }: React.HTMLAttributes<HTMLParagraphElement>) => {
   return (
     <p
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm text-white/70", className)}
       {...props}
     >
       {children}

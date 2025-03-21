@@ -3,46 +3,104 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .glass-effect {
+    @apply bg-opacity-[var(--glass-opacity)] backdrop-blur-[var(--glass-blur)] border border-white/[var(--glass-border-opacity)] shadow-lg shadow-black/[var(--glass-shadow-opacity)] pointer-events-auto;
+  }
+  
+  .gradient-bg {
+    background: linear-gradient(135deg, #0072F5, #00C4B4);
+    background-size: 400% 400%;
+    position: relative;
+    animation: gradient-animation 15s ease infinite;
+  }
+  
+  @keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .gradient-bg::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='smallGrid' width='20' height='20' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='%23FFFFFF' stroke-width='0.5' stroke-opacity='0.15'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23smallGrid)'/%3E%3C/svg%3E");
+    opacity: 0.2;
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  
+  .button-primary {
+    @apply bg-primary text-white rounded-lg px-5 py-2 hover:scale-105 transition-transform shadow-md;
+  }
+  
+  .button-secondary {
+    @apply bg-transparent border border-white/50 text-white rounded-lg px-5 py-2 hover:scale-105 transition-transform shadow-md;
+  }
+}
+
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* NextUI inspired colors */
+    --background-start: 212 100% 48%; /* Blue #0072F5 */
+    --background-end: 174 100% 38%; /* Teal #00C4B4 */
+    --background: 212 100% 48%;
+    --foreground: 0 0% 100%; /* White text */
 
+    /* Glass effect properties */
+    --glass-opacity: 0.15;
+    --glass-blur: 12px;
+    --glass-border-opacity: 0.2;
+    --glass-shadow-opacity: 0.1;
+    
+    /* Card with glass effect */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-opacity: var(--glass-opacity);
+    --card-foreground: 0 0% 100%; /* White text */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-opacity: var(--glass-opacity);
+    --popover-foreground: 0 0% 100%; /* White text */
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 212 100% 48%; /* Blue #0072F5 */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 210 20% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 174 100% 38%; /* Teal #00C4B4 */
+    --secondary-foreground: 0 0% 100%; /* White */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 83%; /* Light gray #D3D3D3 */
+    --muted-foreground: 0 0% 100%; /* White */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 212 100% 48%; /* Blue #0072F5 */
+    --accent-foreground: 0 0% 100%; /* White */
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 11%;
+    --border: 0 0% 100%; /* White borders */
+    --input: 0 0% 100%; /* White input */
+    --ring: 212 100% 48%; /* Blue ring */
 
     --radius: 0.75rem;
 
+    /* Sidebar with glass effect */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 5% 26%;
-    --sidebar-primary: 210 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 96%;
-    --sidebar-accent-foreground: 240 6% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-opacity: var(--glass-opacity);
+    --sidebar-foreground: 0 0% 100%; /* White text */
+    --sidebar-primary: 212 100% 48%; /* Blue #0072F5 */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 174 100% 38%; /* Teal #00C4B4 */
+    --sidebar-accent-foreground: 0 0% 100%; /* White */
+    --sidebar-border: 0 0% 100%; /* White border */
+    --sidebar-ring: 212 100% 48%; /* Blue ring */
 
     --budget-low: 142 72% 29%;
     --budget-low-foreground: 0 0% 100%;
@@ -53,42 +111,56 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* NextUI inspired colors - dark mode is similar to light mode for this design */
+    --background-start: 195 50% 20%; /* Deep teal #1A3C4D */
+    --background-end: 174 100% 38%; /* Vibrant cyan-blue #00C4B4 */
+    --background: 195 50% 20%;
+    --foreground: 0 0% 100%; /* White text */
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    /* Glass effect properties */
+    --glass-opacity: 0.15;
+    --glass-blur: 12px;
+    --glass-border-opacity: 0.2;
+    --glass-shadow-opacity: 0.1;
+    
+    /* Card with glass effect */
+    --card: 0 0% 100%;
+    --card-opacity: var(--glass-opacity);
+    --card-foreground: 0 0% 100%; /* White text */
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%;
+    --popover-opacity: var(--glass-opacity);
+    --popover-foreground: 0 0% 100%; /* White text */
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 212 100% 48%; /* Blue #0072F5 */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 174 100% 38%; /* Teal #00C4B4 */
+    --secondary-foreground: 0 0% 100%; /* White */
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 83%; /* Light gray #D3D3D3 */
+    --muted-foreground: 0 0% 100%; /* White */
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 212 100% 48%; /* Blue #0072F5 */
+    --accent-foreground: 0 0% 100%; /* White */
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 0 0% 100%; /* White borders */
+    --input: 0 0% 100%; /* White input */
+    --ring: 212 100% 48%; /* Blue ring */
 
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 210 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 16%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 217 91% 60%;
+    /* Sidebar with glass effect */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-opacity: var(--glass-opacity);
+    --sidebar-foreground: 0 0% 100%; /* White text */
+    --sidebar-primary: 212 100% 48%; /* Blue #0072F5 */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 174 100% 38%; /* Teal #00C4B4 */
+    --sidebar-accent-foreground: 0 0% 100%; /* White */
+    --sidebar-border: 0 0% 100%; /* White border */
+    --sidebar-ring: 212 100% 48%; /* Blue ring */
     
     --budget-low: 142 72% 29%;
     --budget-low-foreground: 0 0% 100%;

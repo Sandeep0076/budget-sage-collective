@@ -39,13 +39,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen gradient-bg text-white">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card transition-all duration-300">
+      <aside className="hidden md:flex flex-col w-64 border-r border-white/20 bg-black/20 glass-effect transition-all duration-300 relative z-20">
         <div className="p-6">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 relative z-30 pointer-events-auto">
             <CreditCard className="w-8 h-8 text-primary" />
-            <span className="text-xl font-bold">Budget Sage</span>
+            <span className="text-xl font-bold text-glow">Budget Sage</span>
           </Link>
         </div>
         <nav className="flex-1 px-4 py-2 space-y-1">
@@ -56,8 +56,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               className={cn(
                 "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
                 currentPath === item.path
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "bg-primary/20 text-white font-medium border border-white/20 shadow-glow-sm pointer-events-auto relative z-30"
+                  : "text-white/80 hover:bg-secondary/20 hover:text-white hover:border hover:border-white/10 pointer-events-auto relative z-30"
               )}
             >
               {item.icon}
@@ -69,7 +69,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           ))}
         </nav>
         <div className="p-4 mt-auto">
-          <div className="p-4 rounded-lg bg-primary/5 space-y-3">
+          <div className="p-4 rounded-lg bg-primary/10 glass-effect border border-white/20 space-y-3">
             <div className="flex items-center space-x-2 text-sm font-medium">
               <TrendingUp className="w-4 h-4 text-primary" />
               <span>Monthly Summary</span>
@@ -77,32 +77,33 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Income</span>
-                <span className="font-medium">$3,450.00</span>
+                <span className="font-medium text-white">$3,450.00</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Expenses</span>
-                <span className="font-medium">$2,135.75</span>
+                <span className="font-medium text-white">$2,135.75</span>
               </div>
             </div>
             <div className="flex justify-between pt-2 border-t border-border">
               <span className="text-sm">Savings</span>
-              <span className="font-medium text-primary">$1,314.25</span>
+              <span className="font-medium text-primary text-glow">$1,314.25</span>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Mobile Header */}
-      <div className="fixed md:hidden inset-x-0 top-0 z-50 h-16 border-b bg-card/80 backdrop-blur-lg">
+      <div className="fixed md:hidden inset-x-0 top-0 z-50 h-16 border-b border-white/20 bg-black/20 glass-effect">
         <div className="flex items-center justify-between h-full px-4">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 relative z-30 pointer-events-auto">
             <CreditCard className="w-6 h-6 text-primary" />
-            <span className="text-lg font-bold">Budget Sage</span>
+            <span className="text-lg font-bold text-white text-glow">Budget Sage</span>
           </Link>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-white hover:bg-primary/20 border border-white/20 relative z-50 pointer-events-auto"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -111,18 +112,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden bg-background/80 backdrop-blur-sm">
-          <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-card shadow-xl animate-slide-down">
+        <div className="fixed inset-0 z-40 md:hidden bg-background/50 backdrop-blur-md">
+          <div className="fixed inset-y-0 right-0 w-full max-w-xs bg-black/20 glass-effect shadow-xl animate-slide-down">
             <div className="flex flex-col h-full overflow-y-auto">
-              <div className="flex items-center justify-between p-4 border-b">
-                <Link to="/" className="flex items-center space-x-2">
+              <div className="flex items-center justify-between p-4 border-b border-white/20">
+                <Link to="/" className="flex items-center space-x-2 relative z-30 pointer-events-auto">
                   <CreditCard className="w-6 h-6 text-primary" />
-                  <span className="text-lg font-bold">Budget Sage</span>
+                  <span className="text-lg font-bold text-white text-glow">Budget Sage</span>
                 </Link>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMobileMenuOpen(false)}
+                  className="relative z-50 pointer-events-auto"
                 >
                   <X className="w-5 h-5" />
                 </Button>
@@ -135,8 +137,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     className={cn(
                       "flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200",
                       currentPath === item.path
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        ? "bg-primary/20 text-white font-medium border border-white/20 shadow-glow-sm pointer-events-auto relative z-30"
+                        : "text-white/80 hover:bg-secondary/20 hover:text-white hover:border hover:border-white/10 pointer-events-auto relative z-30"
                     )}
                   >
                     {item.icon}
@@ -145,12 +147,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 ))}
               </nav>
               <div className="p-4 mt-auto">
-                <div className="p-4 rounded-lg bg-primary/5 space-y-3">
+                <div className="p-4 rounded-lg bg-primary/10 glass-effect border border-white/20 space-y-3">
                   <div className="flex items-center space-x-2 text-sm font-medium">
                     <Clock className="w-4 h-4 text-primary" />
                     <span>Last Update</span>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-white/80">
                     Today at 2:34 PM
                   </div>
                 </div>
@@ -162,7 +164,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto pt-16 md:pt-0">
-        <div className="container mx-auto p-4 md:p-6 max-w-7xl">
+        <div className="container mx-auto p-4 md:p-6 max-w-7xl relative z-10">
           {children}
         </div>
       </main>
