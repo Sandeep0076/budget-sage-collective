@@ -28,6 +28,26 @@ interface BudgetOverviewProps {
   year: number;
 }
 
+// Define interfaces for our data types to help with type safety
+interface CategorySpending {
+  category: string;
+  categoryId: string;
+  color: string;
+  amount: number;
+}
+
+interface Budget {
+  id: string;
+  category_id: string;
+  amount: number;
+  categories?: {
+    id: string;
+    name: string;
+    color: string;
+    icon: string | null;
+  };
+}
+
 const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
   const [open, setOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
@@ -39,18 +59,18 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
   const { data: spending = [], isLoading: isLoadingSpending } = useMonthlySpending(month, year);
   const upsertBudgetMutation = useUpsertBudget();
 
-  // Total budget and spending
-  const totalBudget = budgets.reduce((acc: number, budget: any) => acc + Number(budget.amount || 0), 0);
+  // Total budget and spending with proper type handling
+  const totalBudget = budgets.reduce((acc: number, budget: Budget) => acc + Number(budget.amount || 0), 0);
   
-  // Calculate total spent by summing all spending data
-  const totalSpent = spending.reduce((acc: number, cat: any) => acc + Number(cat.amount || 0), 0);
+  // Calculate total spent by summing all spending data with proper type casting
+  const totalSpent = spending.reduce((acc: number, cat: CategorySpending) => acc + (typeof cat.amount === 'number' ? cat.amount : 0), 0);
   
   const overallPercentage = calculatePercentage(totalSpent, totalBudget);
   
   // Function to get spending for a specific category
-  const getCategorySpending = (categoryId: string) => {
-    const category = spending.find((s: any) => s.categoryId === categoryId);
-    return category ? Number(category.amount || 0) : 0;
+  const getCategorySpending = (categoryId: string): number => {
+    const category = spending.find((s: CategorySpending) => s.categoryId === categoryId);
+    return category ? (typeof category.amount === 'number' ? category.amount : 0) : 0;
   };
   
   // Handle budget form submission
@@ -62,7 +82,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
     }
     
     // Find if there's an existing budget for this category
-    const existingBudget = budgets.find((b: any) => b.category_id === selectedCategoryId);
+    const existingBudget = budgets.find((b: Budget) => b.category_id === selectedCategoryId);
     
     upsertBudgetMutation.mutate({
       id: existingBudget?.id,
@@ -251,9 +271,10 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
               </div>
             ) : (
               <div className="space-y-4">
-                {budgets.map((budget: any) => {
+                {budgets.map((budget: Budget) => {
                   const spent = getCategorySpending(budget.category_id);
-                  const percentage = calculatePercentage(spent, Number(budget.amount || 0));
+                  const budgetAmount = typeof budget.amount === 'number' ? budget.amount : 0;
+                  const percentage = calculatePercentage(spent, budgetAmount);
                   const colorClass = getBudgetColorClass(percentage);
                   const categoryName = budget.categories?.name || 'Uncategorized';
                   
@@ -264,7 +285,7 @@ const BudgetOverview: React.FC<BudgetOverviewProps> = ({ month, year }) => {
                           <div className="flex justify-between mb-1">
                             <span className="text-sm font-medium">{categoryName}</span>
                             <span className={`text-sm font-medium ${colorClass}`}>
-                              {formatCurrency(spent)} / {formatCurrency(Number(budget.amount || 0))}
+                              {formatCurrency(spent)} / {formatCurrency(budgetAmount)}
                             </span>
                           </div>
                           <Progress value={percentage * 100} className="h-2" />
