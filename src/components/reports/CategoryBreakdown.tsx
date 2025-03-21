@@ -15,6 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Layers } from 'lucide-react';
 
+// Define type for category spending data
+interface CategorySpendingData {
+  category: string;
+  categoryId: string;
+  color: string;
+  amount: number;
+}
+
 interface CategoryBreakdownProps {
   month?: number;
   year: number;
@@ -33,8 +41,11 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
   // In a real implementation, you would need to aggregate data across all months
   const { data: categorySpending = [], isLoading } = useMonthlySpending(month, year);
   
+  // Type the category spending data
+  const typedCategorySpending = categorySpending as CategorySpendingData[];
+  
   // Sort categories by amount (descending)
-  const sortedCategories = [...categorySpending].sort((a, b) => b.amount - a.amount);
+  const sortedCategories = [...typedCategorySpending].sort((a, b) => b.amount - a.amount);
   
   // Calculate total spending
   const totalSpending = sortedCategories.reduce((total, cat) => total + cat.amount, 0);
@@ -42,7 +53,7 @@ const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
   // Custom tooltip for the pie chart
   const customTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const data = payload[0].payload as CategorySpendingData;
       const percentage = ((data.amount / totalSpending) * 100).toFixed(1);
       
       return (
