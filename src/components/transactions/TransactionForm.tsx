@@ -10,7 +10,7 @@
  * @param onCancel - Callback function when form is cancelled
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,14 +37,31 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   onSubmit,
   onCancel
 }) => {
-  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
+  const { data: categoriesData, isLoading: isLoadingCategories, error: categoriesError } = useCategories();
   const createTransactionMutation = useCreateTransaction();
+  const [formError, setFormError] = useState<string | null>(null);
+  
+  // Ensure categories is always an array
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  
+  useEffect(() => {
+    // Log for debugging
+    console.log('TransactionForm mounted');
+    console.log('Categories loading:', isLoadingCategories);
+    console.log('Categories error:', categoriesError);
+    console.log('Categories data:', categories);
+    
+    if (categoriesError) {
+      setFormError('Error loading categories. Please try again later.');
+      console.error('Categories error:', categoriesError);
+    }
+  }, [categories, isLoadingCategories, categoriesError]);
   
   const [transactionData, setTransactionData] = useState({
     description: '',
     amount: '',
     transaction_date: new Date().toISOString().split('T')[0],
-    category_id: '',
+    category_id: null,
     transaction_type: 'expense',
     notes: ''
   });
@@ -55,11 +72,23 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setTransactionData(prev => ({ ...prev, [name]: value }));
+    // For category_id, handle special values
+    if (name === 'category_id') {
+      if (value === 'uncategorized' || value === 'no-categories') {
+        // Set to null or empty string based on your backend expectations
+        setTransactionData(prev => ({ ...prev, [name]: null }));
+      } else {
+        setTransactionData(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      // For other fields, just set the value directly
+      setTransactionData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     
     // Validate amount is a valid number
     const amount = parseFloat(transactionData.amount);
@@ -71,6 +100,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       });
       return;
     }
+    
+    console.log('Submitting transaction:', transactionData);
     
     try {
       await createTransactionMutation.mutateAsync({
@@ -87,7 +118,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         description: '',
         amount: '',
         transaction_date: new Date().toISOString().split('T')[0],
-        category_id: '',
+        category_id: null,
         transaction_type: 'expense',
         notes: ''
       });
@@ -96,15 +127,52 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       if (onSubmit) {
         onSubmit(transactionData);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating transaction:', error);
+      setFormError(error.message || 'There was an error creating your transaction');
       toast({
         title: "Transaction failed",
-        description: "There was an error creating your transaction",
+        description: error.message || "There was an error creating your transaction",
         variant: "destructive"
       });
     }
   };
+
+  // If there's a critical error, show error state
+  if (formError) {
+    return (
+      <CustomCard className="w-full max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 text-center">
+            <p className="text-red-500 mb-4">{formError}</p>
+            <Button onClick={() => setFormError(null)} variant="outline">Try Again</Button>
+            {onCancel && (
+              <Button onClick={onCancel} variant="ghost" className="ml-2">Cancel</Button>
+            )}
+          </div>
+        </CardContent>
+      </CustomCard>
+    );
+  }
+  
+  // Show loading state while categories are loading
+  if (isLoadingCategories) {
+    return (
+      <CustomCard className="w-full max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle>Loading...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 text-center">
+            <p className="mb-4">Loading transaction form...</p>
+          </div>
+        </CardContent>
+      </CustomCard>
+    );
+  }
 
   return (
     <CustomCard className="w-full max-w-lg mx-auto">
@@ -164,7 +232,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
             <div className="space-y-2">
               <Label htmlFor="category_id">Category</Label>
               <Select
-                value={transactionData.category_id}
+                value={transactionData.category_id || 'uncategorized'}
                 onValueChange={(value) => handleSelectChange('category_id', value)}
                 disabled={isLoadingCategories}
               >
@@ -174,18 +242,23 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Categories</SelectLabel>
-                    <SelectItem value="">Uncategorized</SelectItem>
-                    {categories
-                      .filter((cat: any) => 
-                        transactionData.transaction_type === 'income' 
-                          ? cat.is_income 
-                          : !cat.is_income
-                      )
-                      .map((category: any) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                    ))}
+                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                    {Array.isArray(categories) && categories.length > 0 ? 
+                      categories
+                        .filter((cat: any) => 
+                          cat && typeof cat === 'object' && 
+                          (transactionData.transaction_type === 'income' 
+                            ? cat.is_income 
+                            : !cat.is_income)
+                        )
+                        .map((category: any) => (
+                          <SelectItem key={category.id || 'unknown'} value={category.id || ''}>
+                            {category.name || 'Unnamed Category'}
+                          </SelectItem>
+                        ))
+                      : 
+                      <SelectItem value="no-categories">No categories available</SelectItem>
+                    }
                   </SelectGroup>
                 </SelectContent>
               </Select>

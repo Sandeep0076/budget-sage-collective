@@ -1,0 +1,461 @@
+# Budget Tracker Application Masterplan
+
+## 1. Project Overview
+
+### 1.1 App Concept
+A comprehensive, responsive budget tracking web application with PWA capabilities that allows users to track expenses, visualize spending patterns, set budgets, manage recurring transactions, and leverage AI for receipt scanning and natural language queries.
+
+### 1.2 Core Objectives
+- Provide intuitive expense tracking and categorization
+- Deliver insightful financial visualizations and reports
+- Offer AI-powered features for data entry and analysis
+- Create a responsive, professional UI with modern dashboards
+- Enable sharing capabilities for multi-user scenarios
+- Implement secure data handling and storage options
+- Ensure modular, maintainable, and well-documented code architecture
+
+### 1.3 Target Audience
+- Individual users managing personal finances
+- Households/families tracking shared expenses
+- Users of varying technical abilities seeking financial insights
+
+## 2. Feature Specifications
+
+### 2.1 Core Features
+
+#### 2.1.1 Expense Tracking
+- Manual expense entry with customizable fields
+- Receipt scanning via AI (upload image or take photo)
+- Categorization (predefined and custom categories)
+- Tags and notes for additional context
+- Multiple currency support with conversion
+
+#### 2.1.2 Budget Management
+- Monthly budget setting by category
+- Budget vs. actual tracking
+- Overspending alerts
+- Rollover options for unused budget amounts
+
+#### 2.1.3 Reporting & Visualization
+- Interactive dashboards with filtering capabilities
+- Dynamic chart types based on data requirements:
+  - Pie/donut charts for category distribution
+  - Line/area charts for time-series data
+  - Bar/column charts for comparisons
+  - Radar charts for multi-dimensional analysis
+  - Heatmaps for frequency/intensity patterns
+  - Scatter plots for correlation analysis
+  - Sankey diagrams for flow visualization
+  - Gauge charts for goal progress
+- Custom date range selection
+- Export capabilities for reports
+- Interactive and responsive chart components
+
+#### 2.1.4 AI Integration
+- Receipt scanning and data extraction
+- Natural language query interface
+- Spending pattern analysis and insights
+- Flexible API integration with Google Gemini as default provider
+- Adapter pattern for future support of additional AI providers (OpenAI, etc.)
+
+#### 2.1.5 Multi-user Capabilities
+- Individual accounts
+- Shared household/family accounts
+- Customizable sharing permissions
+
+### 2.2 Additional Features
+
+#### 2.2.1 Recurring Transactions
+- Setup and management of recurring expenses/income
+- Automatic categorization
+- Reminder notifications
+
+#### 2.2.2 Bill Payments
+- Due date tracking
+- Payment reminders
+- Google Calendar integration
+
+#### 2.2.3 Savings Goals
+- Goal setting interface
+- Progress tracking
+- Projection calculations
+
+#### 2.2.4 Subscription Management
+- Subscription tracking
+- Renewal reminders
+- Cost analysis and recommendations
+
+#### 2.2.5 Investment Tracking
+- Basic investment portfolio monitoring
+- Performance visualization
+- Asset allocation charts
+
+## 3. Technical Architecture
+
+### 3.1 Frontend
+**Selected Stack: Next.js with TypeScript**
+- **UI Framework**: Material UI for responsive, professional design
+- **State Management**: Redux Toolkit or React Query
+- **Chart Library**: Chart.js/D3.js for powerful visualizations with ability to dynamically render various chart types
+- **PWA Implementation**: Using Next.js PWA features and Workbox
+
+**Rationale**: Next.js provides improved SEO, performance optimizations, and server-side rendering capabilities while maintaining React's component model. Material UI offers a comprehensive set of pre-designed components that follow Material Design principles.
+
+### 3.2 Backend
+**Selected Stack: FastAPI with Python**
+- **API Architecture**: RESTful API with potential for GraphQL implementation
+- **Authentication**: JWT-based auth with social login options
+- **Benefits**:
+  - Excellent performance with async support
+  - Built-in API documentation (Swagger/OpenAPI)
+  - Native type hints and validation
+  - Ideal for AI integration with Python ecosystem
+
+**Rationale**: FastAPI provides excellent performance and is particularly well-suited for AI integrations given Python's strong ecosystem of data science and machine learning libraries.
+
+### 3.3 Database
+**Recommended: Supabase**
+- PostgreSQL-based with built-in authentication and storage
+- Row-level security for multi-user data isolation
+- Real-time capabilities
+- Built-in user management
+
+**Rationale**: Supabase offers a robust solution that handles authentication, storage, and database needs in one platform. It's also open-source and provides good security features.
+
+### 3.4 Storage
+- Supabase Storage for application data
+- Google Drive integration for backup/export
+- Local storage capabilities for offline mode
+
+### 3.5 AI Integration
+- Google Gemini API as default AI provider
+- Modular AI service integration for future expansion
+- Adapter pattern for potential integration with other AI providers
+- Receipt processing pipeline with image preprocessing
+- Natural language processing for query interface
+
+### 3.6 Code Architecture
+- **Modularity**: Strict separation of concerns with domain-driven design principles
+- **Component Structure**: Atomic design methodology for UI components
+- **API Layer**: Centralized API client with request/response interceptors
+- **State Management**: Clear separation of global vs. local state
+- **Feature Modules**: Self-contained feature modules with minimal cross-dependencies
+- **Testability**: Components and services designed for easy unit and integration testing
+- **Error Handling**: Centralized error handling with consistent user feedback
+
+### 3.7 Logging & Diagnostics
+- **Comprehensive Logging System**:
+  - User activity logging for debugging user-reported issues
+  - System performance metrics
+  - Error tracking with stack traces and context
+  - API request/response logging (sanitized of sensitive data)
+- **Diagnostic Tools**:
+  - Health check endpoints
+  - Performance monitoring
+  - State inspection tooling
+  - Debug mode for development
+- **Log Levels**: Configurable log levels (DEBUG, INFO, WARN, ERROR)
+- **Log Storage**: Rotating logs with retention policies
+- **Monitoring Dashboard**: Admin interface for system health monitoring
+
+## 4. User Experience & Interface
+
+### 4.1 Key UI Components
+- Dashboard homepage with summary widgets
+- Navigation menu (side drawer on desktop, bottom bar on mobile)
+- Transaction entry form with receipt upload
+- Budget configuration interface
+- Reports and analytics section with dynamic chart selection
+- Settings and account management
+- AI chat interface for queries
+
+### 4.2 User Flow
+1. Onboarding/authentication
+2. Dashboard overview
+3. Expense entry/management
+4. Budget configuration
+5. Reports and insights
+6. Settings/preferences
+
+### 4.3 Responsive Design
+- Mobile-first approach
+- Adaptive layouts for different screen sizes
+- Touch-friendly interface elements
+- Offline capabilities through PWA
+
+### 4.4 Accessibility
+- WCAG 2.1 AA compliance
+- Screen reader compatibility
+- Keyboard navigation
+- Color contrast considerations
+
+## 5. Data Model
+
+### 5.1 Core Entities
+- Users
+- Accounts (financial accounts)
+- Categories (expense/income categories)
+- Transactions
+- Budgets
+- Recurring Transactions
+- Bills
+- Savings Goals
+- Subscriptions
+- Investments
+
+### 5.2 Key Relationships
+- User has many Accounts
+- Account has many Transactions
+- Transaction belongs to Category
+- Budget belongs to Category
+- User has many Budgets
+- User has many Recurring Transactions
+- User has many Bills
+- User has many Savings Goals
+- User has many Subscriptions
+- User has many Investments
+
+## 6. Security Considerations
+
+### 6.1 Authentication & Authorization
+- Email/password authentication
+- Social login integration (Google, etc.)
+- JWT token management
+- Role-based access control for shared accounts
+- Preparation for future 2FA implementation
+
+### 6.2 Data Protection
+- Encryption at rest via Supabase
+- HTTPS/TLS for data in transit
+- Secure API access with rate limiting
+- Input validation and sanitization
+- Protection against common web vulnerabilities (XSS, CSRF)
+
+### 6.3 Privacy Compliance
+- Clear privacy policy
+- User data export capability
+- Account deletion functionality
+- Data minimization practices
+- Transparency about AI data usage
+
+## 7. Development Path
+
+### 7.1 Environment Setup
+1. Set up version control with Git repository
+2. Configure development, staging, and production environments
+3. Establish CI/CD pipeline for automated testing and deployment
+4. Define coding standards and linting rules
+
+### 7.2 Frontend Development (Next.js)
+1. Initialize project using Next.js with TypeScript
+   ```bash
+   npx create-next-app@latest --typescript budget-tracker
+   ```
+2. Set up Material UI integration
+   ```bash
+   npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
+   ```
+3. Implement responsive layout and navigation structure
+4. Configure PWA capabilities
+   ```bash
+   npm install next-pwa
+   ```
+5. Set up data visualization components with Chart.js or D3.js
+   ```bash
+   npm install chart.js react-chartjs-2
+   # or
+   npm install d3
+   ```
+6. Implement state management with Redux Toolkit or React Query
+   ```bash
+   npm install @reduxjs/toolkit react-redux
+   # or
+   npm install @tanstack/react-query
+   ```
+
+### 7.3 Backend Development (FastAPI)
+1. Set up Python environment with virtual environment
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+2. Install FastAPI and dependencies
+   ```bash
+   pip install fastapi uvicorn sqlalchemy pydantic python-jose python-multipart
+   ```
+3. Create project structure with modular router organization
+4. Implement authentication and authorization
+5. Develop core API endpoints for budget tracking functionality
+6. Set up database models and migrations
+7. Implement comprehensive logging system
+
+### 7.4 AI Integration
+1. Set up Google Gemini API client
+   ```bash
+   pip install google-generativeai
+   ```
+2. Implement receipt processing service
+    use gemini-2.0-flash API for OCR  
+3. Create AI service adapter pattern for provider flexibility
+4. Develop natural language query processor
+5. Implement receipt data extraction pipeline
+
+### 7.5 Database & Storage Setup
+1. Create Supabase project
+2. Configure authentication providers
+3. Set up database schema and tables
+4. Implement row-level security policies
+5. Configure storage buckets for receipts and user data
+6. Set up Google Drive integration for backups
+
+### 7.6 Integration & Testing
+1. Connect frontend to backend APIs
+2. Implement end-to-end testing with Cypress or Playwright
+3. Set up unit testing with Jest for frontend and Pytest for backend
+4. Conduct performance testing and optimization
+5. Implement user acceptance testing
+
+### 7.7 Deployment
+1. Configure production builds for frontend and backend
+2. Set up containerization with Docker
+3. Deploy to chosen cloud provider
+4. Configure monitoring and alerting
+5. Establish backup and recovery procedures
+
+## 8. Implementation Phases
+
+### 8.1 Phase 1: Core Functionality
+- User authentication system
+- Basic expense tracking
+- Simple categorization
+- Essential dashboards and visualizations
+- Data storage implementation
+- Responsive UI foundation
+- Logging and diagnostic setup
+
+### 8.2 Phase 2: Enhanced Features
+- Budget management
+- Advanced reporting
+- Recurring transactions
+- Bill payment tracking
+- PWA implementation
+- Settings and preferences
+- Extended chart capabilities
+
+### 8.3 Phase 3: AI Integration
+- Receipt scanning functionality
+- Natural language query system
+- AI provider adapter implementation
+- Insights and recommendations
+
+### 8.4 Phase 4: Advanced Features
+- Multi-user sharing
+- Savings goals
+- Subscription tracking
+- Investment monitoring
+- Google Calendar integration
+- Export/backup functionality
+- Advanced analytics and custom reporting
+
+## 9. Technical Challenges & Solutions
+
+### 9.1 AI Integration Modularity
+**Challenge**: Supporting multiple AI providers without tight coupling.
+**Solution**: Implement adapter pattern and dependency injection for AI services.
+
+### 9.2 Offline Functionality
+**Challenge**: Ensuring data consistency between offline and online modes.
+**Solution**: Implement data synchronization queue with conflict resolution.
+
+### 9.3 Performance with Large Datasets
+**Challenge**: Maintaining responsive UI with years of transaction data.
+**Solution**: Implement data pagination, virtual scrolling, and aggregate queries.
+
+### 9.4 Receipt OCR Accuracy
+**Challenge**: Extracting accurate data from diverse receipt formats.
+**Solution**: Implement preprocessing pipeline with image enhancement and structured data extraction.
+
+### 9.5 Natural Language Query Complexity
+**Challenge**: Translating complex financial queries into database operations.
+**Solution**: Implement query templates and entity recognition for common financial terms.
+
+### 9.6 Code Maintainability
+**Challenge**: Keeping code maintainable as features grow.
+**Solution**: 
+- Strict adherence to SOLID principles
+- Feature flag system for experimental features
+- Comprehensive automated test suite
+- Clear documentation standards
+- Code quality monitoring
+
+### 9.7 Diagnostics and Troubleshooting
+**Challenge**: Efficiently diagnosing user-reported issues.
+**Solution**:
+- Session replay capability (privacy-focused)
+- Unique error reference IDs for support cases
+- Context-rich logging
+- User action audit trail
+
+## 10. Future Expansion Possibilities
+
+### 10.1 Advanced AI Features
+- Predictive budgeting based on spending patterns
+- Anomaly detection for unusual transactions
+- Financial advice and optimization recommendations
+
+### 10.2 Additional Integrations
+- Banking API connections for automatic imports
+- Email scanning for digital receipts
+- Expanded calendar integrations
+- Tax preparation software exports
+
+### 10.3 Enhanced Financial Planning
+- Debt reduction planning
+- Retirement calculators
+- Life event financial planning
+- What-if scenario modeling
+
+### 10.4 Mobile Applications
+- Native mobile apps for iOS and Android
+- Enhanced offline capabilities
+- Mobile-specific features (location-based tracking, etc.)
+
+### 10.5 Monetization Options
+- Premium features tier
+- Family/business subscription plans
+- White-label solution for financial advisors
+
+## 11. Technical Stack Summary
+
+### 11.1 Frontend
+- Next.js with TypeScript
+- Material UI
+- Chart.js/D3.js for versatile visualizations
+- PWA capabilities
+- Modular component architecture
+
+### 11.2 Backend
+- FastAPI with Python
+- RESTful API architecture
+- JWT authentication
+- Comprehensive logging system
+
+### 11.3 AI
+- Google Gemini API (default)
+- Adapter pattern for provider flexibility
+- Python-based image processing pipeline
+
+### 11.4 Database & Storage
+- Supabase (PostgreSQL)
+- Supabase Storage
+- Google Drive integration
+
+### 11.5 DevOps & Deployment
+- CI/CD pipeline (GitHub Actions or similar)
+- Containerization with Docker
+- Deployment to cloud provider (Vercel, Netlify, or similar)
+- Automated testing framework
+- Monitoring and alerting systems 
+
+Keep Frontend and Backend separate
+Add debugging and logging statements thoroughly in each implementation 
