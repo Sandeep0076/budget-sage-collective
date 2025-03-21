@@ -33,7 +33,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-const TransactionList: React.FC = () => {
+interface TransactionListProps {
+  onAddNew?: () => void;
+}
+
+const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: transactions = [], isLoading } = useTransactions();
   const queryClient = useQueryClient();
@@ -151,7 +155,7 @@ const TransactionList: React.FC = () => {
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
           </Button>
-          <Button>
+          <Button onClick={onAddNew}>
             <Plus className="h-4 w-4 mr-2" />
             Add New
           </Button>

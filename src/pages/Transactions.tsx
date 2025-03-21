@@ -27,13 +27,17 @@ const Transactions = () => {
     });
   };
 
+  const handleShowForm = () => {
+    setShowForm(true);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
           {!showForm && (
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={handleShowForm}>
               <Plus className="mr-2 h-4 w-4" />
               Add Transaction
             </Button>
@@ -52,7 +56,7 @@ const Transactions = () => {
             onCancel={() => setShowForm(false)} 
           />
         ) : (
-          <TransactionList />
+          <TransactionList onAddNew={handleShowForm} />
         )}
       </div>
     </AppLayout>

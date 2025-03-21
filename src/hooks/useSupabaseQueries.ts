@@ -264,18 +264,23 @@ export const useUpsertBudget = () => {
         user_id: user.user.id,
       });
       
+      // Fixed: Remove id if it's undefined to let Supabase generate a new one
+      const budgetData = {
+        user_id: user.user.id,
+        category_id: budget.category_id,
+        amount: budget.amount,
+        month: budget.month,
+        year: budget.year,
+      };
+      
+      // Only add id to the object if it actually exists
+      if (budget.id && budget.id !== 'undefined') {
+        Object.assign(budgetData, { id: budget.id });
+      }
+      
       const { data, error } = await supabase
         .from('budgets')
-        .upsert([
-          {
-            id: budget.id,
-            user_id: user.user.id,
-            category_id: budget.category_id,
-            amount: budget.amount,
-            month: budget.month,
-            year: budget.year,
-          },
-        ])
+        .upsert([budgetData])
         .select();
       
       if (error) {
