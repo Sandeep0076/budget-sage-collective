@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
-import { useCategories, useCreateTransaction } from '@/hooks/useSupabaseQueries';
+import { useCategories, useCreateTransaction, useCreateRecurringTransaction, RecurringFrequency } from '@/hooks/useSupabaseQueries';
 import { toast } from '@/hooks/use-toast';
 
 interface TransactionFormProps {
@@ -39,6 +39,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
 }) => {
   const { data: categoriesData, isLoading: isLoadingCategories, error: categoriesError } = useCategories();
   const createTransactionMutation = useCreateTransaction();
+  const createRecurringTransactionMutation = useCreateRecurringTransaction();
   const [formError, setFormError] = useState<string | null>(null);
   
   // Ensure categories is always an array
@@ -63,7 +64,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     transaction_date: new Date().toISOString().split('T')[0],
     category_id: null,
     transaction_type: 'expense',
-    notes: ''
+    notes: '',
+    is_recurring: false,
+    frequency: 'monthly' as RecurringFrequency,
+    end_date: ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -80,6 +84,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       } else {
         setTransactionData(prev => ({ ...prev, [name]: value }));
       }
+    } else if (name === 'is_recurring') {
+      // Convert string value to boolean
+      setTransactionData(prev => ({ ...prev, [name]: value === 'true' }));
     } else {
       // For other fields, just set the value directly
       setTransactionData(prev => ({ ...prev, [name]: value }));
@@ -104,14 +111,29 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
     console.log('Submitting transaction:', transactionData);
     
     try {
-      await createTransactionMutation.mutateAsync({
-        description: transactionData.description,
-        amount: amount,
-        transaction_date: transactionData.transaction_date,
-        category_id: transactionData.category_id || null,
-        transaction_type: transactionData.transaction_type as 'income' | 'expense',
-        notes: transactionData.notes || null
-      });
+      if (transactionData.is_recurring) {
+        // Submit as recurring transaction
+        await createRecurringTransactionMutation.mutateAsync({
+          description: transactionData.description,
+          amount: amount,
+          category_id: transactionData.category_id || null,
+          transaction_type: transactionData.transaction_type as 'income' | 'expense',
+          notes: transactionData.notes || null,
+          frequency: transactionData.frequency,
+          start_date: transactionData.transaction_date,
+          end_date: transactionData.end_date || null
+        });
+      } else {
+        // Submit as regular transaction
+        await createTransactionMutation.mutateAsync({
+          description: transactionData.description,
+          amount: amount,
+          transaction_date: transactionData.transaction_date,
+          category_id: transactionData.category_id || null,
+          transaction_type: transactionData.transaction_type as 'income' | 'expense',
+          notes: transactionData.notes || null
+        });
+      }
       
       // Reset form
       setTransactionData({
@@ -120,7 +142,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
         transaction_date: new Date().toISOString().split('T')[0],
         category_id: null,
         transaction_type: 'expense',
-        notes: ''
+        notes: '',
+        is_recurring: false,
+        frequency: 'monthly',
+        end_date: ''
       });
       
       // Call onSubmit if provided
@@ -286,6 +311,62 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
               </Select>
             </div>
           </div>
+          
+          {/* Recurring Option */}
+          <div className="space-y-2">
+            <Label htmlFor="is_recurring">Is this recurring?</Label>
+            <Select
+              value={transactionData.is_recurring ? 'true' : 'false'}
+              onValueChange={(value) => handleSelectChange('is_recurring', value)}
+            >
+              <SelectTrigger id="is_recurring">
+                <SelectValue placeholder="Is this recurring?" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="false">One-time transaction</SelectItem>
+                  <SelectItem value="true">Recurring transaction</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Show frequency and end date options if recurring */}
+          {transactionData.is_recurring && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="frequency">Frequency</Label>
+                <Select
+                  value={transactionData.frequency}
+                  onValueChange={(value) => handleSelectChange('frequency', value)}
+                >
+                  <SelectTrigger id="frequency">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Recurrence</SelectLabel>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Biweekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="yearly">Yearly</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date (Optional)</Label>
+                <Input
+                  id="end_date"
+                  name="end_date"
+                  type="date"
+                  value={transactionData.end_date}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">
@@ -308,9 +389,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
           )}
           <Button 
             type="submit" 
-            disabled={createTransactionMutation.isPending || !transactionData.description || !transactionData.amount}
+            disabled={
+              createTransactionMutation.isPending || 
+              createRecurringTransactionMutation.isPending || 
+              !transactionData.description || 
+              !transactionData.amount
+            }
           >
-            {createTransactionMutation.isPending ? 'Saving...' : 'Add Transaction'}
+            {createTransactionMutation.isPending || createRecurringTransactionMutation.isPending 
+              ? 'Saving...' 
+              : transactionData.is_recurring 
+                ? 'Add Recurring Transaction' 
+                : 'Add Transaction'
+            }
           </Button>
         </CardFooter>
       </form>

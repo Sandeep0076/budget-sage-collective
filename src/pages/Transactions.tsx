@@ -27,8 +27,10 @@ const Transactions = () => {
     console.log('Transaction submitted:', data);
     setShowForm(false);
     toast({
-      title: "Transaction added",
-      description: "Your transaction has been added successfully"
+      title: data.is_recurring ? "Recurring transaction added" : "Transaction added",
+      description: data.is_recurring 
+        ? `Your recurring ${data.transaction_type} has been scheduled` 
+        : "Your transaction has been added successfully"
     });
   };
   
