@@ -81,7 +81,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const renderMobile = () => (
     <div className="flex flex-col h-screen">
-      <header className="bg-secondary py-4 px-6 flex items-center justify-between">
+      <header className="gradient-bg py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button variant="ghost" onClick={() => setMenuOpen(true)}>
             <Menu className="h-6 w-6 text-white" />
@@ -92,7 +92,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <div className={`fixed top-0 left-0 h-full w-3/4 bg-secondary z-50 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
+      <div className={`fixed top-0 left-0 h-full w-3/4 gradient-bg z-50 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
         <div className="p-4">
           <div className="flex items-center justify-between mb-6">
             <span className="text-lg font-semibold text-white">Navigation</span>
@@ -128,7 +128,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const renderDesktop = () => (
     <div className="flex h-screen">
-      <aside className="w-64 bg-secondary py-8 px-4 flex flex-col">
+      <aside className="w-64 gradient-bg py-8 px-4 flex flex-col">
         <Link to="/dashboard" className="text-3xl font-bold text-white mb-8">
           Budget Sage
         </Link>

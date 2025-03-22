@@ -9,7 +9,7 @@
   }
   
   .gradient-bg {
-    background: linear-gradient(135deg, #0072F5, #00C4B4);
+    background: linear-gradient(135deg, #0091FF, #006FE8);
     background-size: 400% 400%;
     position: relative;
     animation: gradient-animation 15s ease infinite;
@@ -50,9 +50,9 @@
 @layer base {
   :root {
     /* NextUI inspired colors */
-    --background-start: 212 100% 48%; /* Blue #0072F5 */
-    --background-end: 174 100% 38%; /* Teal #00C4B4 */
-    --background: 212 100% 48%;
+    --background-start: 209 100% 50%; /* Vibrant Blue #0091FF */
+    --background-end: 213 100% 45%; /* Medium Blue #006FE8 */
+    --background: 209 100% 50%;
     --foreground: 0 0% 100%; /* White text */
 
     /* Glass effect properties */
@@ -73,7 +73,7 @@
     --primary: 212 100% 48%; /* Blue #0072F5 */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 174 100% 38%; /* Teal #00C4B4 */
+    --secondary: 214 100% 36%; /* Darker Blue #0055b6 */
     --secondary-foreground: 0 0% 100%; /* White */
 
     --muted: 0 0% 83%; /* Light gray #D3D3D3 */
@@ -97,7 +97,7 @@
     --sidebar-foreground: 0 0% 100%; /* White text */
     --sidebar-primary: 212 100% 48%; /* Blue #0072F5 */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 174 100% 38%; /* Teal #00C4B4 */
+    --sidebar-accent: 214 100% 36%; /* Darker Blue #0055b6 */
     --sidebar-accent-foreground: 0 0% 100%; /* White */
     --sidebar-border: 0 0% 100%; /* White border */
     --sidebar-ring: 212 100% 48%; /* Blue ring */
@@ -112,9 +112,9 @@
 
   .dark {
     /* NextUI inspired colors - dark mode is similar to light mode for this design */
-    --background-start: 195 50% 20%; /* Deep teal #1A3C4D */
-    --background-end: 174 100% 38%; /* Vibrant cyan-blue #00C4B4 */
-    --background: 195 50% 20%;
+    --background-start: 214 70% 20%; /* Deep blue */
+    --background-end: 212 100% 48%; /* Blue #0072F5 */
+    --background: 214 70% 20%;
     --foreground: 0 0% 100%; /* White text */
 
     /* Glass effect properties */
@@ -135,7 +135,7 @@
     --primary: 212 100% 48%; /* Blue #0072F5 */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 174 100% 38%; /* Teal #00C4B4 */
+    --secondary: 214 100% 36%; /* Darker Blue #0055b6 */
     --secondary-foreground: 0 0% 100%; /* White */
 
     --muted: 0 0% 83%; /* Light gray #D3D3D3 */
@@ -157,7 +157,7 @@
     --sidebar-foreground: 0 0% 100%; /* White text */
     --sidebar-primary: 212 100% 48%; /* Blue #0072F5 */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 174 100% 38%; /* Teal #00C4B4 */
+    --sidebar-accent: 214 100% 36%; /* Darker Blue #0055b6 */
     --sidebar-accent-foreground: 0 0% 100%; /* White */
     --sidebar-border: 0 0% 100%; /* White border */
     --sidebar-ring: 212 100% 48%; /* Blue ring */
