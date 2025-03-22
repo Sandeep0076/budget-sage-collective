@@ -1,9 +1,11 @@
 
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/toaster';
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import PWAUpdateNotification from '@/components/ui/PWAUpdateNotification';
+import './App.css';
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -12,6 +14,7 @@ const Budgets = lazy(() => import('@/pages/Budgets'));
 const Reports = lazy(() => import('@/pages/Reports'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Auth = lazy(() => import('@/pages/Auth'));
+const Index = lazy(() => import('@/pages/Index'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Bills = lazy(() => import('@/pages/Bills'));
 
@@ -23,23 +26,28 @@ const Loading = () => (
 );
 
 const App = () => {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <Loading />;
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
     <>
       <Suspense fallback={<Loading />}>
         <Routes>
-          <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
-          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
-          <Route path="/transactions" element={user ? <Transactions /> : <Navigate to="/" />} />
-          <Route path="/budgets" element={user ? <Budgets /> : <Navigate to="/" />} />
-          <Route path="/reports" element={user ? <Reports /> : <Navigate to="/" />} />
-          <Route path="/settings" element={user ? <Settings /> : <Navigate to="/" />} />
-          <Route path="/bills" element={user ? <Bills /> : <Navigate to="/" />} />
+          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Index />} />
+          <Route path="/auth" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />} />
+          <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
+          <Route path="/transactions" element={isAuthenticated ? <Transactions /> : <Navigate to="/auth" />} />
+          <Route path="/bills" element={isAuthenticated ? <Bills /> : <Navigate to="/auth" />} />
+          <Route path="/budgets" element={isAuthenticated ? <Budgets /> : <Navigate to="/auth" />} />
+          <Route path="/reports" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

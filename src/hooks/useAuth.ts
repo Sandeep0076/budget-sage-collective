@@ -7,14 +7,29 @@ export interface AuthState {
   isLoading: boolean;
   user: any | null;
   session: Session | null;
+  profile: any | null;
+  logout: () => Promise<void>;
 }
 
 export const useAuth = () => {
+  // Define logout function outside state to avoid circular reference
+  const logoutFn = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error logging out:', error);
+      throw error;
+    }
+  };
+
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
     isLoading: true,
     user: null,
     session: null,
+    profile: null,
+    logout: logoutFn
   });
 
   useEffect(() => {
@@ -30,6 +45,8 @@ export const useAuth = () => {
             isLoading: false,
             user: null,
             session: null,
+            profile: null,
+            logout: logoutFn
           });
           return;
         }
@@ -41,6 +58,8 @@ export const useAuth = () => {
             isLoading: false,
             user,
             session: data.session,
+            profile: null,
+            logout: logoutFn
           });
         } else {
           setAuthState({
@@ -48,6 +67,8 @@ export const useAuth = () => {
             isLoading: false,
             user: null,
             session: null,
+            profile: null,
+            logout: logoutFn
           });
         }
       } catch (err) {
@@ -57,6 +78,8 @@ export const useAuth = () => {
           isLoading: false,
           user: null,
           session: null,
+          profile: null,
+          logout: logoutFn
         });
       }
     };
@@ -70,6 +93,8 @@ export const useAuth = () => {
             isLoading: false,
             user: session.user,
             session,
+            profile: null,
+            logout: logoutFn
           });
         } else {
           setAuthState({
@@ -77,6 +102,8 @@ export const useAuth = () => {
             isLoading: false,
             user: null,
             session: null,
+            profile: null,
+            logout: logoutFn
           });
         }
       }
