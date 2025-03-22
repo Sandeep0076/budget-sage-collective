@@ -7,7 +7,7 @@
  * Acts as the central hub for the application.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SummaryCards from './SummaryCards';
 import SpendingChart from './SpendingChart';
 import RecentTransactions from './RecentTransactions';
@@ -23,14 +23,45 @@ const Dashboard: React.FC = () => {
   const [selectedYear] = useState(currentYear);
   const [selectedMonth] = useState(currentMonth);
   
+  // Create refs to store previous data to prevent flickering
+  const prevYearlyDataRef = useRef<any[]>([]);
+  const prevCategorySpendingRef = useRef<any[]>([]);
+  
   // Fetch yearly financial data for the chart
-  const { data: yearlyData = [], isLoading: isLoadingYearlyData } = useYearlyFinancials(selectedYear);
+  const { data: fetchedYearlyData = [], isLoading: isLoadingYearlyData } = useYearlyFinancials(selectedYear);
   
   // Fetch monthly spending by category
-  const { data: categorySpending = [], isLoading: isLoadingCategoryData } = useMonthlySpending(selectedMonth, selectedYear);
+  const { data: fetchedCategorySpending = [], isLoading: isLoadingCategoryData } = useMonthlySpending(selectedMonth, selectedYear);
+  
+  // Create state for stable data that won't cause flickering
+  const [yearlyData, setYearlyData] = useState<any[]>([]);
+  const [categorySpending, setCategorySpending] = useState<any[]>([]);
+  
+  // Update the stable data when fetched data changes and is not empty
+  useEffect(() => {
+    if (fetchedYearlyData.length > 0) {
+      setYearlyData(fetchedYearlyData);
+      prevYearlyDataRef.current = fetchedYearlyData;
+    }
+  }, [fetchedYearlyData]);
+  
+  useEffect(() => {
+    if (fetchedCategorySpending.length > 0) {
+      setCategorySpending(fetchedCategorySpending);
+      prevCategorySpendingRef.current = fetchedCategorySpending;
+    }
+  }, [fetchedCategorySpending]);
+  
+  // Use previous data if current data is loading
+  const displayYearlyData = yearlyData.length > 0 ? yearlyData : prevYearlyDataRef.current;
+  const displayCategorySpending = categorySpending.length > 0 ? categorySpending : prevCategorySpendingRef.current;
+  
+  // Only show loading state on initial load when we have no data at all
+  const showYearlyLoading = isLoadingYearlyData && displayYearlyData.length === 0;
+  const showCategoryLoading = isLoadingCategoryData && displayCategorySpending.length === 0;
 
   // Calculate summary metrics
-  const currentMonthData = yearlyData.find(
+  const currentMonthData = displayYearlyData.find(
     (item) => item.month === new Date(selectedYear, selectedMonth - 1, 1).toLocaleString('default', { month: 'short' })
   );
   
@@ -90,7 +121,7 @@ const Dashboard: React.FC = () => {
         expenses={expenses} 
         balance={balance} 
         budget={budget} 
-        isLoading={isLoadingYearlyData}
+        isLoading={showYearlyLoading}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -98,8 +129,8 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <SpendingChart 
             chartType="area" 
-            data={yearlyData} 
-            isLoading={isLoadingYearlyData} 
+            data={displayYearlyData} 
+            isLoading={showYearlyLoading} 
           />
         </div>
         
@@ -110,11 +141,11 @@ const Dashboard: React.FC = () => {
               <CardTitle>Spending by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoadingCategoryData ? (
+              {showCategoryLoading ? (
                 <div className="h-64 flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : categorySpending.length === 0 ? (
+              ) : displayCategorySpending.length === 0 ? (
                 <div className="h-64 flex items-center justify-center text-center">
                   <div className="text-muted-foreground">
                     <p>No spending data available for this month.</p>
@@ -126,7 +157,7 @@ const Dashboard: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={categorySpending}
+                        data={displayCategorySpending}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -137,7 +168,7 @@ const Dashboard: React.FC = () => {
                         animationDuration={1000}
                         animationBegin={200}
                       >
-                        {categorySpending.map((entry: any, index: number) => (
+                        {displayCategorySpending.map((entry: any, index: number) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={entry.color} 

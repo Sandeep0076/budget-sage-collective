@@ -391,6 +391,12 @@ export const useMonthlySpending = (month: number, year: number) => {
       
       return Object.values(spendingByCategory);
     },
+    // Add caching and stale-while-revalidate settings
+    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Cache data for 30 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Use cached data on mount if available
+    placeholderData: (previousData) => previousData // Keep showing old data while fetching new data
   });
 };
 
@@ -435,6 +441,12 @@ export const useYearlyFinancials = (year: number) => {
       
       return months;
     },
+    // Add caching and stale-while-revalidate settings
+    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Cache data for 30 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnMount: false, // Use cached data on mount if available
+    placeholderData: (previousData) => previousData // Keep showing old data while fetching new data
   });
 };
 

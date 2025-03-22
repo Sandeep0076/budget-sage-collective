@@ -31,9 +31,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up session listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
+      async (_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
+        
+        // If we have a session and rememberMe is true, refresh the session
+        // to extend its lifetime whenever auth state changes
+        if (newSession && localStorage.getItem('rememberMe') === 'true') {
+          try {
+            await supabase.auth.refreshSession();
+          } catch (error) {
+            console.error('Error refreshing session:', error);
+          }
+        }
+        
         setIsLoading(false);
       }
     );
@@ -42,6 +53,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        // If we have a session and rememberMe is true, refresh the session
+        if (initialSession && localStorage.getItem('rememberMe') === 'true') {
+          try {
+            await supabase.auth.refreshSession();
+          } catch (error) {
+            console.error('Error refreshing session:', error);
+          }
+        }
+        
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
       } catch (error) {
@@ -61,8 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      // For Supabase v2, we can set the session expiry during sign-in
-      // Default is around 1 hour, with rememberMe we set to 30 days
+      // Sign in with email and password
       const { error } = await supabase.auth.signInWithPassword({ 
         email, 
         password,
@@ -70,13 +90,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // If rememberMe is true and sign-in was successful, we'll store this preference
-      // This is a simple implementation - in a real app, you might want to handle this differently
+      // Store the rememberMe preference in localStorage
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
+        
+        // For Supabase, we need to refresh the session to extend its lifetime
+        // This will create a new session with a longer expiration
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) console.error('Error refreshing session:', refreshError);
       } else {
         localStorage.removeItem('rememberMe');
       }
+      
       toast({
         title: 'Welcome back!',
         description: 'You have successfully signed in.',

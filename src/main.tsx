@@ -13,12 +13,17 @@ import './index.css';
 // Register the service worker for PWA support
 registerServiceWorker();
 
-// Create a query client for React Query
+// Create a query client for React Query with improved configuration to prevent flickering
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000,
-      refetchOnWindowFocus: false
+      staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+      gcTime: 30 * 60 * 1000, // Cache data for 30 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1, // Only retry failed requests once
+      // Use previous data while loading new data
+      placeholderData: (previousData) => previousData
     }
   }
 });
