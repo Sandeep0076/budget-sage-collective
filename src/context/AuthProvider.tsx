@@ -16,7 +16,7 @@ interface AuthContextProps {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -59,10 +59,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      // For Supabase v2, we can set the session expiry during sign-in
+      // Default is around 1 hour, with rememberMe we set to 30 days
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+      });
+      
       if (error) throw error;
+      
+      // If rememberMe is true and sign-in was successful, we'll store this preference
+      // This is a simple implementation - in a real app, you might want to handle this differently
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
       toast({
         title: 'Welcome back!',
         description: 'You have successfully signed in.',

@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
@@ -23,6 +24,7 @@ const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,7 +41,7 @@ const Auth: React.FC = () => {
       if (isSignUp) {
         await signUp(email, password);
       } else {
-        await signIn(email, password);
+        await signIn(email, password, rememberMe);
         navigate('/');
       }
     } catch (error: any) {
@@ -107,6 +109,19 @@ const Auth: React.FC = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
+                </div>
+              )}
+              
+              {!isSignUp && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="rememberMe" 
+                    checked={rememberMe} 
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+                    Remember me
+                  </Label>
                 </div>
               )}
             </CardContent>
