@@ -58,7 +58,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
       
       if (error) throw error;
       
+      // Invalidate all related queries to ensure dashboard and other components update correctly
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlySpending'] });
+      queryClient.invalidateQueries({ queryKey: ['yearlyFinancials'] });
       
       toast({
         title: 'Transaction deleted',
