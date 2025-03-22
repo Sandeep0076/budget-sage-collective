@@ -15,6 +15,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { toast } from '@/hooks/use-toast';
 import RecurringTransactions from '@/components/transactions/RecurringTransactions';
 import Documentation from '@/components/settings/Documentation';
+import Theme from '@/components/settings/Theme';
 
 // Profile schema
 const profileSchema = z.object({
@@ -78,6 +79,7 @@ const Settings = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            <TabsTrigger value="theme">Theme</TabsTrigger>
             <TabsTrigger value="recurring">Recurring Transactions</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
           </TabsList>
@@ -212,6 +214,18 @@ const Settings = () => {
                     <Button type="submit">Save Preferences</Button>
                   </form>
                 </Form>
+              </CardContent>
+            </CustomCard>
+          </TabsContent>
+          
+          {/* Theme Tab */}
+          <TabsContent value="theme">
+            <CustomCard>
+              <CardHeader>
+                <CardTitle>Theme Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Theme />
               </CardContent>
             </CustomCard>
           </TabsContent>
