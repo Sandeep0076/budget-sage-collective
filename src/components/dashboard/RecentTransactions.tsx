@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { useTransactions } from '@/hooks/useSupabaseQueries';
+import { useTransactions, useProfile } from '@/hooks/useSupabaseQueries';
 import CustomCard, { CardHeader, CardTitle, CardContent } from '@/components/ui/CustomCard';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus } from 'lucide-react';
@@ -17,6 +17,10 @@ import { Link } from 'react-router-dom';
 
 const RecentTransactions: React.FC = () => {
   const { data: transactions = [], isLoading } = useTransactions({ limit: 5 });
+  const { data: profile } = useProfile();
+  
+  // Get user's currency preference
+  const userCurrency = profile?.currency || 'EUR';
   
   return (
     <CustomCard className="w-full">
@@ -89,7 +93,7 @@ const RecentTransactions: React.FC = () => {
                       ? 'text-emerald-600 dark:text-emerald-400' 
                       : ''
                   }`}>
-                    {transaction.transaction_type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                    {transaction.transaction_type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount, userCurrency)}
                   </div>
                 </div>
               ))}

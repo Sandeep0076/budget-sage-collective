@@ -3,6 +3,21 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 @layer utilities {
   .glass-effect {
     @apply bg-opacity-[var(--glass-opacity)] backdrop-blur-[var(--glass-blur)] border border-white/[var(--glass-border-opacity)] shadow-lg shadow-black/[var(--glass-shadow-opacity)] pointer-events-auto;

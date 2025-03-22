@@ -71,8 +71,8 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in p-6">
+      <div className="flex items-center justify-between mt-0">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <div className="text-sm text-muted-foreground">
           {new Date().toLocaleDateString('en-US', { 

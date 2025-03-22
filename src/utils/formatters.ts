@@ -6,11 +6,14 @@
 /**
  * Format a number as currency
  * @param amount - The amount to format
- * @param currency - The currency code (default: USD)
+ * @param currency - The currency code (default: EUR)
  * @returns Formatted currency string
  */
-export const formatCurrency = (amount: number, currency = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
+export const formatCurrency = (amount: number, currency = 'EUR'): string => {
+  // Use appropriate locale based on currency
+  const locale = currency === 'EUR' ? 'de-DE' : 'en-US';
+  
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,

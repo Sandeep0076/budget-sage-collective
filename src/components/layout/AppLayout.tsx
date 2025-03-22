@@ -80,7 +80,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   ];
 
   const renderMobile = () => (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       <header className="gradient-bg py-4 px-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button variant="ghost" onClick={() => setMenuOpen(true)}>
@@ -120,15 +120,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      <main className="flex-grow bg-background p-6">
+      <main className="flex-grow bg-background p-0 overflow-y-auto">
         {children}
       </main>
     </div>
   );
 
   const renderDesktop = () => (
-    <div className="flex h-screen">
-      <aside className="w-64 gradient-bg py-8 px-4 flex flex-col">
+    <div className="flex h-full w-full overflow-hidden">
+      <aside className="w-56 gradient-bg py-6 px-2 flex flex-col">
         <Link to="/dashboard" className="text-3xl font-bold text-white mb-8">
           Budget Sage
         </Link>
@@ -151,7 +151,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </Button>
         </div>
       </aside>
-      <main className="flex-grow bg-background p-8">
+      <main className="flex-grow bg-background p-0 overflow-y-auto">
         {children}
       </main>
     </div>

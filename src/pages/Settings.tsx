@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import CustomCard, { CardHeader, CardTitle, CardContent } from '@/components/ui/CustomCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useProfile } from '@/hooks/useSupabaseQueries';
+import { useProfile, useUpdateProfile } from '@/hooks/useSupabaseQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ const profileSchema = z.object({
 
 const Settings = () => {
   const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
   const [activeTab, setActiveTab] = useState('account');
   
   const form = useForm<z.infer<typeof profileSchema>>({
@@ -35,7 +36,7 @@ const Settings = () => {
       firstName: '',
       lastName: '',
       email: '',
-      currency: 'USD',
+      currency: 'EUR', // Set EUR as default
     },
   });
   
@@ -46,17 +47,19 @@ const Settings = () => {
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
         email: profile.email || '',
-        currency: profile.currency || 'USD',
+        currency: profile.currency || 'EUR', // Default to EUR if not set
       });
     }
   }, [profile, form]);
   
   const onSubmit = (data: z.infer<typeof profileSchema>) => {
     console.log('Form submitted:', data);
-    // Implementation would be added for updating profile
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile has been successfully updated.',
+    
+    // Update profile in Supabase
+    updateProfile.mutate({
+      first_name: data.firstName,
+      last_name: data.lastName,
+      currency: data.currency,
     });
   };
   
