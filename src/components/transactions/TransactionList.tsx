@@ -295,7 +295,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
               ) : (
                 // Only render a reasonable number of transactions to prevent performance issues
                 filteredTransactions.slice(0, 50).map((transaction: any) => (
-                  <TableRow key={transaction.id} className="hover:bg-muted/50">
+                  <TableRow key={transaction.id} className="transition-all duration-200 hover:bg-secondary/50">
                     <TableCell className="font-medium">{transaction.description}</TableCell>
                     <TableCell>{transaction.categories?.name || 'Uncategorized'}</TableCell>
                     <TableCell>{formatDate(transaction.transaction_date)}</TableCell>
