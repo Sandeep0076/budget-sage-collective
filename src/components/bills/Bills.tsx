@@ -14,9 +14,8 @@ const Bills: React.FC = () => {
   const [editingBill, setEditingBill] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('all');
   
-  const { data: bills = [], isLoading, refetch } = useBills(
-    activeTab !== 'all' ? { status: activeTab } : undefined
-  );
+  // Fetch all bills
+  const { data: allBills = [], isLoading, refetch } = useBills();
   
   const markBillPaidMutation = useMarkBillPaid();
   const deleteBillMutation = useDeleteBill();
@@ -34,7 +33,8 @@ const Bills: React.FC = () => {
   const handleMarkPaid = async (id: string) => {
     try {
       await markBillPaidMutation.mutateAsync(id);
-      refetch();
+      // Force a complete refetch to update all tabs
+      await refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -47,7 +47,8 @@ const Bills: React.FC = () => {
   const handleDeleteBill = async (id: string) => {
     try {
       await deleteBillMutation.mutateAsync(id);
-      refetch();
+      // Force a complete refetch to update all tabs
+      await refetch();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -59,6 +60,7 @@ const Bills: React.FC = () => {
 
   const handleFormSubmit = () => {
     setShowForm(false);
+    // Force a complete refetch to update all tabs
     refetch();
     toast({
       title: editingBill ? "Bill updated" : "Bill created",
@@ -68,10 +70,13 @@ const Bills: React.FC = () => {
     });
   };
 
-  // Filter bills into categories for counting
-  const pendingBills = bills.filter(bill => bill.status === 'pending');
-  const paidBills = bills.filter(bill => bill.status === 'paid');
-  const overdueBills = bills.filter(bill => 
+  // Filter bills based on the active tab
+  const filteredBills = activeTab === 'all' ? allBills : allBills.filter(bill => bill.status === activeTab);
+  
+  // Calculate bill counts for each tab
+  const pendingBills = allBills.filter(bill => bill.status === 'pending');
+  const paidBills = allBills.filter(bill => bill.status === 'paid');
+  const overdueBills = allBills.filter(bill => 
     bill.status === 'overdue' || (bill.status === 'pending' && new Date(bill.due_date) < new Date())
   );
 
@@ -103,7 +108,7 @@ const Bills: React.FC = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="all">
-                All ({bills.length})
+                All ({allBills.length})
               </TabsTrigger>
               <TabsTrigger value="pending">
                 Pending ({pendingBills.length})
@@ -118,7 +123,7 @@ const Bills: React.FC = () => {
             
             <TabsContent value="all" className="mt-4">
               <BillsList 
-                bills={bills}
+                bills={filteredBills}
                 isLoading={isLoading}
                 onMarkPaid={handleMarkPaid}
                 onEdit={handleEditBill}

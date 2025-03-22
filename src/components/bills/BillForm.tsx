@@ -9,15 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface BillFormProps {
   bill?: any;
@@ -47,7 +39,7 @@ const BillForm: React.FC<BillFormProps> = ({
     status: bill?.status || 'pending',
     recurring: bill?.recurring || false,
     frequency: bill?.frequency || 'monthly',
-    category_id: bill?.category_id || null,
+    category_id: bill?.category_id || '',
     notes: bill?.notes || ''
   });
 
@@ -75,8 +67,8 @@ const BillForm: React.FC<BillFormProps> = ({
         status: formData.status as 'pending' | 'paid' | 'overdue',
         recurring: formData.recurring,
         frequency: formData.recurring ? formData.frequency : undefined,
-        category_id: formData.category_id || undefined,
-        notes: formData.notes || undefined
+        category_id: formData.category_id && formData.category_id !== '' ? formData.category_id : undefined,
+        notes: formData.notes && formData.notes !== '' ? formData.notes : undefined
       };
 
       if (bill?.id) {
@@ -160,44 +152,45 @@ const BillForm: React.FC<BillFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
+              <RadioGroup 
+                value={formData.status} 
                 onValueChange={(value) => handleSelectChange('status', value)}
+                className="flex flex-col space-y-1 mt-2"
               >
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Status</SelectLabel>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="pending" id="status-pending" />
+                  <Label htmlFor="status-pending" className="cursor-pointer">Pending</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="paid" id="status-paid" />
+                  <Label htmlFor="status-paid" className="cursor-pointer">Paid</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="overdue" id="status-overdue" />
+                  <Label htmlFor="status-overdue" className="cursor-pointer">Overdue</Label>
+                </div>
+              </RadioGroup>
             </div>
             <div className="space-y-2">
               <Label htmlFor="category_id">Category</Label>
-              <Select
-                value={formData.category_id || ''}
+              <RadioGroup 
+                value={formData.category_id} 
                 onValueChange={(value) => handleSelectChange('category_id', value)}
+                className="flex flex-col space-y-1 mt-2"
               >
-                <SelectTrigger id="category_id">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Categories</SelectLabel>
-                    <SelectItem value="">Uncategorized</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="" id="category-none" />
+                  <Label htmlFor="category-none" className="cursor-pointer">Uncategorized</Label>
+                </div>
+                {categories && categories.length > 0 ? (
+                  categories.map(category => (
+                    <div key={category.id} className="flex items-center space-x-2">
+                      <RadioGroupItem value={category.id} id={`category-${category.id}`} />
+                      <Label htmlFor={`category-${category.id}`} className="cursor-pointer">{category.name}</Label>
+                    </div>
+                  ))
+                ) : null}
+              </RadioGroup>
             </div>
           </div>
 
@@ -214,24 +207,18 @@ const BillForm: React.FC<BillFormProps> = ({
             {formData.recurring && (
               <div className="mt-4">
                 <Label htmlFor="frequency">Frequency</Label>
-                <Select
-                  value={formData.frequency}
+                <RadioGroup 
+                  value={formData.frequency} 
                   onValueChange={(value) => handleSelectChange('frequency', value)}
+                  className="flex flex-col space-y-1 mt-2"
                 >
-                  <SelectTrigger id="frequency">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Frequency</SelectLabel>
-                      {frequencyOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  {frequencyOptions.map(option => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <RadioGroupItem value={option.value} id={`frequency-${option.value}`} />
+                      <Label htmlFor={`frequency-${option.value}`} className="cursor-pointer">{option.label}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
             )}
           </div>

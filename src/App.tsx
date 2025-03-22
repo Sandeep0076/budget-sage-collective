@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/context/AuthProvider';
+import PWAUpdateNotification from '@/components/ui/PWAUpdateNotification';
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -43,6 +44,7 @@ const App = () => {
         </Routes>
       </Suspense>
       <Toaster />
+      <PWAUpdateNotification />
     </>
   );
 };

@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import RecurringTransactions from '@/components/transactions/RecurringTransactions';
+import Documentation from '@/components/settings/Documentation';
 
 // Profile schema
 const profileSchema = z.object({
@@ -78,6 +79,7 @@ const Settings = () => {
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="recurring">Recurring Transactions</TabsTrigger>
+            <TabsTrigger value="documentation">Documentation</TabsTrigger>
           </TabsList>
           
           {/* Account Tab */}
@@ -222,6 +224,18 @@ const Settings = () => {
               </CardHeader>
               <CardContent>
                 <RecurringTransactions />
+              </CardContent>
+            </CustomCard>
+          </TabsContent>
+          
+          {/* Documentation Tab */}
+          <TabsContent value="documentation">
+            <CustomCard>
+              <CardHeader>
+                <CardTitle>Documentation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Documentation />
               </CardContent>
             </CustomCard>
           </TabsContent>

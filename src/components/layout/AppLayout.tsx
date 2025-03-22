@@ -13,7 +13,8 @@ import {
   X,
   TrendingUp,
   Clock,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -35,6 +36,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: '/transactions', label: 'Transactions', icon: <Receipt className="w-5 h-5" /> },
     { path: '/budgets', label: 'Budgets', icon: <PieChart className="w-5 h-5" /> },
+    { path: '/bills', label: 'Bills', icon: <FileText className="w-5 h-5" /> },
     { path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
