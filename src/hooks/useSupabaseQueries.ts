@@ -1,9 +1,8 @@
-
 /**
  * Custom hooks for Supabase queries
  * 
  * This file contains hooks for fetching and managing data from Supabase,
- * including transactions, categories, budgets, and user profiles.
+ * including transactions, categories, budgets, user profiles, and recurring transactions.
  */
 
 import { useState, useEffect } from 'react';
@@ -51,6 +50,21 @@ export interface Budget {
   amount: number;
   month: number;
   year: number;
+}
+
+export interface RecurringTransaction {
+  id: string;
+  user_id: string;
+  description: string;
+  amount: number;
+  category_id: string | null;
+  transaction_type: 'expense' | 'income';
+  frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+  start_date: string;
+  end_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /**
@@ -417,6 +431,184 @@ export const useYearlyFinancials = (year: number) => {
       });
       
       return months;
+    },
+  });
+};
+
+/**
+ * Fetches recurring transactions for the current user
+ */
+export const useRecurringTransactions = () => {
+  return useQuery({
+    queryKey: ['recurringTransactions'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        throw new Error('Not authenticated');
+      }
+      
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .select(`
+          *,
+          categories (
+            id,
+            name,
+            color,
+            icon
+          )
+        `)
+        .order('start_date', { ascending: false });
+      
+      if (error) throw error;
+      
+      return data as (RecurringTransaction & { categories: Category })[];
+    },
+  });
+};
+
+/**
+ * Creates a new recurring transaction
+ */
+export const useCreateRecurringTransaction = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (transaction: Omit<RecurringTransaction, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        throw new Error('Not authenticated');
+      }
+      
+      console.log('Creating recurring transaction:', {
+        ...transaction,
+        user_id: user.user.id,
+      });
+      
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .insert([
+          {
+            ...transaction,
+            user_id: user.user.id,
+          },
+        ])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate recurring transactions query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['recurringTransactions'] });
+      
+      toast({
+        title: 'Recurring transaction created',
+        description: 'Your recurring transaction has been created successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Recurring transaction creation error:', error);
+      toast({
+        title: 'Error creating recurring transaction',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+/**
+ * Updates an existing recurring transaction
+ */
+export const useUpdateRecurringTransaction = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (transaction: Partial<RecurringTransaction> & { id: string }) => {
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        throw new Error('Not authenticated');
+      }
+      
+      console.log('Updating recurring transaction:', transaction);
+      
+      const { data, error } = await supabase
+        .from('recurring_transactions')
+        .update(transaction)
+        .eq('id', transaction.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringTransactions'] });
+      
+      toast({
+        title: 'Recurring transaction updated',
+        description: 'Your recurring transaction has been updated successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Recurring transaction update error:', error);
+      toast({
+        title: 'Error updating recurring transaction',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+/**
+ * Deletes a recurring transaction
+ */
+export const useDeleteRecurringTransaction = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('recurring_transactions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurringTransactions'] });
+      
+      toast({
+        title: 'Recurring transaction deleted',
+        description: 'Your recurring transaction has been deleted successfully.',
+      });
+    },
+    onError: (error) => {
+      console.error('Recurring transaction deletion error:', error);
+      toast({
+        title: 'Error deleting recurring transaction',
+        description: error.message,
+        variant: 'destructive',
+      });
     },
   });
 };

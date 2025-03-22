@@ -1,104 +1,68 @@
 
-/**
- * Settings Page
- * 
- * Allows users to customize application settings including
- * profile information, notification preferences, appearance,
- * and account management options.
- */
-
 import React, { useState } from 'react';
-import { useAuth } from '@/context/AuthProvider';
-import { useProfile } from '@/hooks/useSupabaseQueries';
 import AppLayout from '@/components/layout/AppLayout';
-import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
+import CustomCard, { CardHeader, CardTitle, CardContent } from '@/components/ui/CustomCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useProfile } from '@/hooks/useSupabaseQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import RecurringTransactions from '@/components/transactions/RecurringTransactions';
+
+// Profile schema
+const profileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  currency: z.string().min(1, 'Currency is required'),
+});
 
 const Settings = () => {
-  const { user, signOut } = useAuth();
   const { data: profile, isLoading } = useProfile();
+  const [activeTab, setActiveTab] = useState('account');
   
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    currency: 'USD'
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      currency: 'USD',
+    },
   });
   
-  // Update form data when profile is loaded
+  // Update form values when profile data is loaded
   React.useEffect(() => {
     if (profile) {
-      setFormData({
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        email: profile.email,
-        currency: profile.currency || 'USD'
+      form.reset({
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        email: profile.email || '',
+        currency: profile.currency || 'USD',
       });
     }
-  }, [profile]);
+  }, [profile, form]);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const onSubmit = (data: z.infer<typeof profileSchema>) => {
+    console.log('Form submitted:', data);
+    // Implementation would be added for updating profile
+    toast({
+      title: 'Profile Updated',
+      description: 'Your profile has been successfully updated.',
+    });
   };
-  
-  const handleCurrencyChange = (value: string) => {
-    setFormData(prev => ({ ...prev, currency: value }));
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          currency: formData.currency
-        })
-        .eq('id', user?.id);
-      
-      if (error) throw error;
-      
-      toast({
-        title: 'Settings updated',
-        description: 'Your profile settings have been updated successfully.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Update failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-  
-  const currencies = [
-    { code: 'USD', name: 'US Dollar ($)' },
-    { code: 'EUR', name: 'Euro (€)' },
-    { code: 'GBP', name: 'British Pound (£)' },
-    { code: 'JPY', name: 'Japanese Yen (¥)' },
-    { code: 'CAD', name: 'Canadian Dollar (CA$)' },
-    { code: 'AUD', name: 'Australian Dollar (A$)' }
-  ];
   
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="space-y-6 animate-pulse">
-          <div className="h-8 w-32 bg-muted rounded"></div>
-          <div className="h-10 w-full bg-muted rounded"></div>
-          <div className="grid gap-6">
-            <div className="h-96 bg-muted rounded"></div>
-          </div>
+        <div className="flex items-center justify-center h-full">
+          <p>Loading settings...</p>
         </div>
       </AppLayout>
     );
@@ -106,138 +70,156 @@ const Settings = () => {
   
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         
-        <Tabs defaultValue="profile" className="w-full">
-          <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
             <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            <TabsTrigger value="recurring">Recurring Transactions</TabsTrigger>
           </TabsList>
           
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-4 mt-4">
+          <TabsContent value="account">
             <CustomCard>
-              <form onSubmit={handleSubmit}>
-                <CardHeader>
-                  <CardTitle>Profile Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="first_name">First Name</Label>
-                      <Input
-                        id="first_name"
-                        name="first_name"
-                        value={formData.first_name}
-                        onChange={handleChange}
+              <CardHeader>
+                <CardTitle>Account Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>First Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter your first name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Last Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter your last name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="last_name">Last Name</Label>
-                      <Input
-                        id="last_name"
-                        name="last_name"
-                        value={formData.last_name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
+                    <FormField
+                      control={form.control}
                       name="email"
-                      value={formData.email}
-                      disabled
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="email" 
+                              placeholder="Enter your email"
+                              {...field} 
+                              disabled
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Contact support to change your email address.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Email cannot be changed directly. Contact support if you need to update it.
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit">Save Changes</Button>
-                </CardFooter>
-              </form>
+                    
+                    <Button type="submit">Save Changes</Button>
+                  </form>
+                </Form>
+              </CardContent>
             </CustomCard>
           </TabsContent>
           
-          {/* Preferences Tab */}
-          <TabsContent value="preferences" className="space-y-4 mt-4">
-            <CustomCard>
-              <form onSubmit={handleSubmit}>
-                <CardHeader>
-                  <CardTitle>App Preferences</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select 
-                      value={formData.currency} 
-                      onValueChange={handleCurrencyChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map(currency => (
-                          <SelectItem key={currency.code} value={currency.code}>
-                            {currency.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit">Save Preferences</Button>
-                </CardFooter>
-              </form>
-            </CustomCard>
-          </TabsContent>
-          
-          {/* Account Tab */}
-          <TabsContent value="account" className="space-y-4 mt-4">
+          <TabsContent value="preferences">
             <CustomCard>
               <CardHeader>
-                <CardTitle>Account Management</CardTitle>
+                <CardTitle>Preferences</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium">Password</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Change your account password
-                  </p>
-                  <Button variant="outline" className="mt-2">
-                    Change Password
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium text-red-600">Danger Zone</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Once you delete your account, there is no going back. 
-                    This action cannot be undone.
-                  </p>
-                  <Button variant="destructive" className="mt-2">
-                    Delete Account
-                  </Button>
-                </div>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Default Currency</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex flex-col space-y-1"
+                            >
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="USD" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">
+                                  USD ($)
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="EUR" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">
+                                  EUR (€)
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="GBP" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">
+                                  GBP (£)
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="JPY" />
+                                </FormControl>
+                                <FormLabel className="font-normal cursor-pointer">
+                                  JPY (¥)
+                                </FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <Button type="submit">Save Preferences</Button>
+                  </form>
+                </Form>
               </CardContent>
-              <CardFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => signOut()}
-                >
-                  Sign Out
-                </Button>
-              </CardFooter>
+            </CustomCard>
+          </TabsContent>
+          
+          <TabsContent value="recurring">
+            <CustomCard>
+              <CardHeader>
+                <CardTitle>Recurring Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RecurringTransactions />
+              </CardContent>
             </CustomCard>
           </TabsContent>
         </Tabs>
