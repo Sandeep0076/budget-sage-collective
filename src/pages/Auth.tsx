@@ -11,9 +11,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Check } from 'lucide-react';
 import CustomCard, { CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/CustomCard';
 
 const Auth: React.FC = () => {
@@ -113,15 +113,19 @@ const Auth: React.FC = () => {
               )}
               
               {!isSignUp && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="rememberMe" 
-                    checked={rememberMe} 
-                    onCheckedChange={(checked) => setRememberMe(checked === true)}
-                  />
-                  <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+                <div className="flex items-center space-x-3 mt-4">
+                  <div 
+                    className={`flex justify-center items-center h-5 w-5 rounded-sm cursor-pointer ${rememberMe ? 'bg-white' : 'bg-transparent border-2 border-white'}`}
+                    onClick={() => setRememberMe(!rememberMe)}
+                  >
+                    {rememberMe && <Check className="h-4 w-4 text-blue-600" />}
+                  </div>
+                  <span 
+                    className="text-sm font-medium text-white cursor-pointer"
+                    onClick={() => setRememberMe(!rememberMe)}
+                  >
                     Remember me
-                  </Label>
+                  </span>
                 </div>
               )}
             </CardContent>

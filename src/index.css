@@ -20,7 +20,7 @@ html, body {
 
 @layer utilities {
   .glass-effect {
-    @apply bg-opacity-[var(--glass-opacity)] backdrop-blur-[var(--glass-blur)] border border-white/[var(--glass-border-opacity)] shadow-lg shadow-black/[var(--glass-shadow-opacity)] pointer-events-auto;
+    @apply bg-opacity-[var(--glass-opacity)] backdrop-blur-[var(--glass-blur)] border border-white/[var(--glass-border-opacity)] shadow-xl shadow-black/[var(--glass-shadow-opacity)] pointer-events-auto;
   }
   
   .gradient-bg {
@@ -73,8 +73,8 @@ html, body {
     /* Glass effect properties */
     --glass-opacity: 0.15;
     --glass-blur: 12px;
-    --glass-border-opacity: 0.2;
-    --glass-shadow-opacity: 0.1;
+    --glass-border-opacity: 0.25;
+    --glass-shadow-opacity: 0.25;
     
     /* Card with glass effect */
     --card: 0 0% 100%;
@@ -135,8 +135,8 @@ html, body {
     /* Glass effect properties */
     --glass-opacity: 0.15;
     --glass-blur: 12px;
-    --glass-border-opacity: 0.2;
-    --glass-shadow-opacity: 0.1;
+    --glass-border-opacity: 0.25;
+    --glass-shadow-opacity: 0.25;
     
     /* Card with glass effect */
     --card: 0 0% 100%;

@@ -57,7 +57,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
     return 'Over budget';
   };
   
-  // Skeleton loading component
+  // Skeleton loading component with subtle animation
   const SkeletonCard = () => (
     <CustomCard className="animate-pulse">
       <CardContent className="p-6">
@@ -68,7 +68,9 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
     </CustomCard>
   );
   
-  if (isLoading) {
+  // Only show loading state on initial load when we have no data
+  // This prevents flickering when data is refreshing
+  if (isLoading && (income === 0 && expenses === 0 && balance === 0)) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <SkeletonCard />

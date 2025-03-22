@@ -80,8 +80,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   ];
 
   const renderMobile = () => (
-    <div className="flex flex-col h-full w-full overflow-hidden">
-      <header className="gradient-bg py-4 px-6 flex items-center justify-between">
+    <div className="flex flex-col h-full w-full overflow-hidden bg-background">
+      <header className="w-full gradient-bg py-4 px-6 flex items-center justify-between shadow-lg shadow-black/20 z-10">
         <div className="flex items-center">
           <Button variant="ghost" onClick={() => setMenuOpen(true)}>
             <Menu className="h-6 w-6 text-white" />
@@ -92,15 +92,21 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <div className={`fixed top-0 left-0 h-full w-3/4 gradient-bg z-50 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
-        <div className="p-4">
+      {/* Mobile menu overlay */}
+      {menuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />
+      )}
+
+      {/* Mobile sidebar */}
+      <div className={`fixed top-0 left-0 h-screen w-4/5 gradient-bg z-50 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out shadow-2xl shadow-black/30`}>
+        <div className="p-4 h-full flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <span className="text-lg font-semibold text-white">Navigation</span>
             <Button variant="ghost" onClick={() => setMenuOpen(false)}>
               <X className="h-5 w-5 text-white" />
             </Button>
           </div>
-          <nav className="flex flex-col space-y-2">
+          <nav className="flex-grow flex flex-col space-y-2 overflow-y-auto">
             {navigationItems.map((item) => (
               <Link
                 key={item.path}
@@ -112,15 +118,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <span className="ml-3">{item.name}</span>
               </Link>
             ))}
-            <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground" onClick={handleLogout}>
+          </nav>
+          <div className="mt-auto pb-4">
+            <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground w-full" onClick={handleLogout}>
               <LogOut className="h-5 w-5 mr-3" />
               Logout
             </Button>
-          </nav>
+          </div>
         </div>
       </div>
 
-      <main className="flex-grow bg-background p-0 overflow-y-auto">
+      <main className="flex-grow w-full bg-background p-0 overflow-y-auto">
         {children}
       </main>
     </div>
@@ -128,11 +136,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const renderDesktop = () => (
     <div className="flex h-full w-full overflow-hidden">
-      <aside className="w-56 gradient-bg py-6 px-2 flex flex-col">
+      <aside className="w-64 gradient-bg py-8 px-4 flex flex-col h-full shadow-2xl shadow-black/30 relative z-10">
         <Link to="/dashboard" className="text-3xl font-bold text-white mb-8">
           Budget Sage
         </Link>
-        <nav className="flex-grow flex flex-col space-y-2">
+        <nav className="flex-grow flex flex-col space-y-2 overflow-y-auto">
           {navigationItems.map((item) => (
             <Link
               key={item.path}
@@ -144,8 +152,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto">
-          <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground" onClick={handleLogout}>
+        <div className="mt-auto pb-4">
+          <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground w-full" onClick={handleLogout}>
             <LogOut className="h-5 w-5 mr-3" />
             Logout
           </Button>
