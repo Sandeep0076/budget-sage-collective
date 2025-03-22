@@ -1,6 +1,11 @@
 
 import React, { useState } from 'react';
-import { useRecurringTransactions, useCreateRecurringTransaction } from '@/hooks/useSupabaseQueries';
+import { 
+  useRecurringTransactions, 
+  useCreateRecurringTransaction, 
+  useDeleteRecurringTransaction,
+  RecurringFrequency
+} from '@/hooks/useSupabaseQueries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,9 +51,9 @@ const RecurringTransactionForm: React.FC<RecurringTransactionFormProps> = ({
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    category_id: null,
-    transaction_type: 'expense',
-    frequency: 'monthly',
+    category_id: null as string | null,
+    transaction_type: 'expense' as 'expense' | 'income',
+    frequency: 'monthly' as RecurringFrequency,
     start_date: new Date().toISOString().split('T')[0],
     end_date: '',
     notes: ''
@@ -81,7 +86,7 @@ const RecurringTransactionForm: React.FC<RecurringTransactionFormProps> = ({
         description: formData.description,
         amount: amount,
         category_id: formData.category_id,
-        transaction_type: formData.transaction_type as 'income' | 'expense',
+        transaction_type: formData.transaction_type,
         frequency: formData.frequency,
         start_date: formData.start_date,
         end_date: formData.end_date || null,
@@ -241,7 +246,7 @@ const RecurringTransactionForm: React.FC<RecurringTransactionFormProps> = ({
               <Select
                 value={formData.transaction_type}
                 onValueChange={(value) => {
-                  handleSelectChange('transaction_type', value);
+                  handleSelectChange('transaction_type', value as 'expense' | 'income');
                   // Clear category when changing type
                   setFormData(prev => ({ ...prev, category_id: null }));
                 }}
@@ -315,12 +320,12 @@ const RecurringTransactionCard = ({ transaction, onDelete, onEdit }: any) => {
                 </span>
               </div>
             </div>
-            {transaction.category && (
+            {transaction.categories && (
               <Badge 
                 variant={transaction.transaction_type === 'income' ? 'secondary' : 'default'}
                 className="mt-2"
               >
-                {transaction.category.name}
+                {transaction.categories.name}
               </Badge>
             )}
           </div>
@@ -347,6 +352,7 @@ const RecurringTransactions = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const { data: recurringTransactions, isLoading, refetch } = useRecurringTransactions();
+  const deleteRecurringTransactionMutation = useDeleteRecurringTransaction();
 
   const handleAddNew = () => {
     setEditingTransaction(null);
@@ -360,7 +366,7 @@ const RecurringTransactions = () => {
 
   const handleDeleteTransaction = async (id: string) => {
     try {
-      // Implementation for delete will be added with the hooks
+      await deleteRecurringTransactionMutation.mutateAsync(id);
       toast({
         title: "Transaction deleted",
         description: "The recurring transaction has been deleted."

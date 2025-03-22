@@ -80,6 +80,7 @@ const Settings = () => {
             <TabsTrigger value="recurring">Recurring Transactions</TabsTrigger>
           </TabsList>
           
+          {/* Account Tab */}
           <TabsContent value="account">
             <CustomCard>
               <CardHeader>
@@ -146,6 +147,7 @@ const Settings = () => {
             </CustomCard>
           </TabsContent>
           
+          {/* Preferences Tab */}
           <TabsContent value="preferences">
             <CustomCard>
               <CardHeader>
@@ -212,6 +214,7 @@ const Settings = () => {
             </CustomCard>
           </TabsContent>
           
+          {/* Recurring Transactions Tab */}
           <TabsContent value="recurring">
             <CustomCard>
               <CardHeader>

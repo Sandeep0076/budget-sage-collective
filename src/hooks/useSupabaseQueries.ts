@@ -52,6 +52,8 @@ export interface Budget {
   year: number;
 }
 
+export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+
 export interface RecurringTransaction {
   id: string;
   user_id: string;
@@ -59,12 +61,13 @@ export interface RecurringTransaction {
   amount: number;
   category_id: string | null;
   transaction_type: 'expense' | 'income';
-  frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+  frequency: RecurringFrequency;
   start_date: string;
   end_date: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+  category?: Category;
 }
 
 /**
@@ -452,7 +455,7 @@ export const useRecurringTransactions = () => {
         .from('recurring_transactions')
         .select(`
           *,
-          categories (
+          categories:category_id (
             id,
             name,
             color,
@@ -463,7 +466,7 @@ export const useRecurringTransactions = () => {
       
       if (error) throw error;
       
-      return data as (RecurringTransaction & { categories: Category })[];
+      return data as RecurringTransaction[];
     },
   });
 };
