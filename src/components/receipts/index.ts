@@ -8,3 +8,4 @@
 export { default as ReceiptScanner } from './ReceiptScanner';
 export { default as AIConfigPanel } from './AIConfigPanel';
 export { default as AIKeyInput } from './AIKeyInput';
+export { default as ReceiptDataEditor } from './ReceiptDataEditor';

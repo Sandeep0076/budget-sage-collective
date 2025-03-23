@@ -2,13 +2,16 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
-import { Camera, Upload, Receipt, AlertCircle } from 'lucide-react';
+import { Camera, Upload, Receipt, AlertCircle, Check } from 'lucide-react';
 import AIConfigPanel from './AIConfigPanel';
+import ReceiptDataEditor from './ReceiptDataEditor';
 import { useAI } from '@/context/AIProvider';
 import { toast } from 'sonner';
+import { ReceiptData } from '@/services/ai/types';
+import { useAddTransaction } from '@/hooks/useSupabaseQueries';
+import { format } from 'date-fns';
 
 const ReceiptScanner: React.FC = () => {
   const { service, isConfigured } = useAI();
@@ -18,9 +21,11 @@ const ReceiptScanner: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [image, setImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<ReceiptData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const addTransaction = useAddTransaction();
 
   const startCamera = async () => {
     try {
@@ -131,7 +136,11 @@ const ReceiptScanner: React.FC = () => {
       
       // Process image with AI service
       const result = await service.processReceiptImage(image, {
-        systemPrompt: `Extract information from this receipt image. Return the data in a structured format including merchant name, date, total amount, and line items. If you can't read something clearly, indicate that with "unclear" rather than guessing.`
+        systemPrompt: `Extract information from this receipt image. 
+        If the text is in German, translate it to English.
+        Return the data in a structured format including merchant name, 
+        date, total amount, and line items. If you can't read something clearly, 
+        indicate that with "unclear" rather than guessing.`
       });
       
       if (result.error) {
@@ -150,8 +159,8 @@ const ReceiptScanner: React.FC = () => {
         description: `Merchant: ${result.data.merchant}, Total: $${result.data.total}`
       });
       
-      // Reset state
-      setImage(null);
+      // Set extracted data for editing
+      setExtractedData(result.data);
       
     } catch (err: any) {
       console.error('Error processing receipt:', err);
@@ -164,9 +173,43 @@ const ReceiptScanner: React.FC = () => {
     }
   };
 
+  const handleSaveTransaction = async (data: ReceiptData) => {
+    try {
+      // Convert receipt data to transaction format
+      const transaction = {
+        description: `${data.merchant} - Receipt`,
+        amount: data.total || 0,
+        transaction_type: 'expense',
+        transaction_date: data.date ? format(new Date(data.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+        notes: data.items ? `Items: ${data.items.map(item => `${item.name} (${item.quantity || 1} x $${item.price})`).join(', ')}` : ''
+      };
+
+      // Save transaction to database
+      await addTransaction.mutateAsync(transaction);
+
+      // Show success message
+      toast.success('Transaction saved successfully!', {
+        action: {
+          label: 'View All',
+          onClick: () => window.location.href = '/transactions'
+        }
+      });
+
+      // Reset state
+      setImage(null);
+      setExtractedData(null);
+    } catch (error: any) {
+      console.error('Error saving transaction:', error);
+      toast.error('Failed to save transaction', {
+        description: error.message
+      });
+    }
+  };
+
   const cancelImage = () => {
     setImage(null);
     setError(null);
+    setExtractedData(null);
   };
 
   const handleTabChange = (value: string) => {
@@ -210,7 +253,7 @@ const ReceiptScanner: React.FC = () => {
       
       <AIConfigPanel />
       
-      {isConfigured && (
+      {isConfigured && !extractedData && (
         <Card className="glass-effect">
           <CardContent className="pt-6">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
@@ -341,6 +384,16 @@ const ReceiptScanner: React.FC = () => {
             </Tabs>
           </CardContent>
         </Card>
+      )}
+
+      {extractedData && (
+        <div className="animate-fade-in">
+          <ReceiptDataEditor 
+            receiptData={extractedData}
+            onSave={handleSaveTransaction}
+            onCancel={cancelImage}
+          />
+        </div>
       )}
     </div>
   );

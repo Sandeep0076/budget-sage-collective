@@ -1,4 +1,3 @@
-
 /**
  * Custom hooks for Supabase queries
  * 
@@ -11,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 // Types based on our database schema
 export interface Profile {
@@ -24,13 +24,13 @@ export interface Profile {
 
 // Define AIConfig manually since it's not in the generated types
 export interface AIConfig {
-  id: string;
-  user_id: string;
+  id?: string;
+  user_id?: string;
   provider: string;
   api_key: string;
   model_name: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Category {
@@ -706,60 +706,46 @@ export const useUpdateProfile = () => {
  * Fetches the AI configuration for the current user
  */
 export const useAIConfig = () => {
+  const { user } = useAuth();
+  const userId = user?.id;
+
   return useQuery({
-    queryKey: ['aiConfig'],
+    queryKey: ['ai_config', userId],
     queryFn: async () => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        
-        if (!user.user) {
-          throw new Error('Not authenticated');
+        if (!userId) {
+          return null;
         }
-        
-        // Use a raw query instead of .from() to bypass TypeScript complaints
+
+        // Try to get the AI config using RPC
         const { data, error } = await supabase
-          .rpc('get_ai_config_for_user', { user_id_param: user.user.id })
-          .maybeSingle();
-          
+          .rpc('get_ai_config_for_user', { user_id_param: userId });
+
         if (error) {
-          // Check for specific errors
-          if (error.message.includes('function "get_ai_config_for_user" does not exist')) {
-            // Fallback to direct query, which might fail if table doesn't exist yet
-            const { data: directData, error: directError } = await supabase
-              .from('ai_config')
-              .select('*')
-              .eq('user_id', user.user.id)
-              .maybeSingle();
-              
-            if (directError) {
-              // Handle table doesn't exist or no records found
-              if (directError.code === '42P01' || directError.code === 'PGRST116') {
-                console.log('AI config not found or table does not exist yet');
-                return null;
-              }
-              throw directError;
-            }
+          console.error("Error in useAIConfig:", error);
+          
+          // If RPC fails, fallback to direct query
+          const { data: directData, error: directError } = await supabase
+            .from('ai_config')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
             
-            return directData as AIConfig;
+          if (directError) {
+            throw directError;
           }
           
-          // Handle no rows returned
-          if (error.code === 'PGRST116') {
-            return null;
-          }
-          
-          console.error('Error fetching AI config:', error);
-          throw error;
+          return directData as AIConfig;
         }
-        
-        return data as AIConfig;
+
+        // Return the first row if we have data
+        return data && data.length > 0 ? data[0] as AIConfig : null;
       } catch (error) {
-        console.error('Error in useAIConfig:', error);
-        return null; // Return null instead of throwing to prevent app crashes
+        console.error("Error fetching AI config:", error);
+        throw error;
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: false, // Don't retry on failure
+    enabled: !!userId,
   });
 };
 
@@ -767,109 +753,79 @@ export const useAIConfig = () => {
  * Saves or updates the AI configuration for the current user
  */
 export const useSaveAIConfig = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  
+  const { data: existingConfig } = useAIConfig();
+
   return useMutation({
-    mutationFn: async (configData: {
-      provider: string;
-      api_key: string;
-      model_name: string;
-    }) => {
+    mutationFn: async (config: { provider: string; api_key: string; model_name: string }) => {
       try {
-        const { data: user } = await supabase.auth.getUser();
-        
-        if (!user.user) {
-          throw new Error('Not authenticated');
+        if (!user?.id) {
+          throw new Error('User not authenticated');
         }
-        
-        // First try to find existing config
-        const { data: existingConfig, error: findError } = await supabase
-          .from('ai_config')
-          .select('id')
-          .eq('user_id', user.user.id)
-          .maybeSingle();
-        
-        // Handle case where table might not exist yet
-        if (findError && findError.code === '42P01') {
-          console.warn('AI config table does not exist yet');
-          toast({
-            title: 'Database setup required',
-            description: 'The AI configuration table needs to be created in your database.',
-            variant: 'destructive',
-          });
-          throw findError;
-        }
-        
-        let result;
-        if (existingConfig) {
-          // Update existing config using raw SQL to bypass TS issues
-          const { data, error } = await supabase
-            .rpc('update_ai_config', {
-              config_id: existingConfig.id, 
-              new_provider: configData.provider,
-              new_api_key: configData.api_key,
-              new_model_name: configData.model_name
+
+        // If there's an existing config, update it
+        if (existingConfig?.id) {
+          try {
+            // Try using RPC first
+            const { data, error } = await supabase.rpc('update_ai_config', {
+              config_id: existingConfig.id,
+              new_provider: config.provider,
+              new_api_key: config.api_key, 
+              new_model_name: config.model_name
             });
+
+            if (error) {
+              throw error;
+            }
+
+            return data;
+          } catch (rpcError) {
+            console.error('RPC error:', rpcError);
             
-          if (error && error.message.includes('function "update_ai_config" does not exist')) {
-            // Fallback to direct update
-            const { data: directData, error: directError } = await supabase
+            // Fallback to direct update if RPC fails
+            const { data, error } = await supabase
               .from('ai_config')
               .update({
-                provider: configData.provider,
-                api_key: configData.api_key,
-                model_name: configData.model_name,
-                updated_at: new Date().toISOString(),
+                provider: config.provider,
+                api_key: config.api_key,
+                model_name: config.model_name,
+                updated_at: new Date().toISOString()
               })
               .eq('id', existingConfig.id)
-              .select()
-              .single();
+              .select();
               
-            if (directError) throw directError;
-            result = directData;
-          } else if (error) {
-            throw error;
-          } else {
-            result = data;
+            if (error) {
+              throw error;
+            }
+            
+            return data[0];
           }
         } else {
-          // Create new config
+          // Insert new config
           const { data, error } = await supabase
             .from('ai_config')
             .insert({
-              user_id: user.user.id,
-              provider: configData.provider,
-              api_key: configData.api_key,
-              model_name: configData.model_name,
+              user_id: user.id,
+              provider: config.provider,
+              api_key: config.api_key,
+              model_name: config.model_name
             })
-            .select()
-            .single();
+            .select();
+            
+          if (error) {
+            throw error;
+          }
           
-          if (error) throw error;
-          result = data;
+          return data[0];
         }
-        
-        return result as AIConfig;
-      } catch (error: any) {
-        console.error('Error in useSaveAIConfig:', error);
-        // Re-throw to trigger onError
+      } catch (error) {
+        console.error('AI config save error:', error);
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['aiConfig'] });
-      toast({
-        title: 'AI configuration saved',
-        description: 'Your AI settings have been saved successfully.',
-      });
-    },
-    onError: (error: any) => {
-      console.error('AI config save error:', error);
-      toast({
-        title: 'Error saving AI configuration',
-        description: error.message || 'An unknown error occurred',
-        variant: 'destructive',
-      });
+      queryClient.invalidateQueries({ queryKey: ['ai_config'] });
     },
   });
 };

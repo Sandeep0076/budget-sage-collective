@@ -1,3 +1,4 @@
+
 /**
  * Scan Receipt Page
  * 
