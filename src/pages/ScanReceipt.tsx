@@ -13,9 +13,9 @@ import { ReceiptScanner } from '@/components/receipts';
 const ScanReceipt = () => {
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in gradient-bg min-h-screen px-4 py-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Scan Receipt</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Scan Receipt</h1>
           <div className="text-sm text-muted-foreground">
             {new Date().toLocaleDateString('en-US', { 
               year: 'numeric', 

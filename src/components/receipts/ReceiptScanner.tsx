@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import ReceiptDataEditor from './ReceiptDataEditor';
 import { useAI } from '@/context/AIProvider';
 import { toast } from 'sonner';
 import { ReceiptData } from '@/services/ai/types';
-import { useAddTransaction } from '@/hooks/useSupabaseQueries';
+import { useTransactions } from '@/hooks/useSupabaseQueries';
 import { format } from 'date-fns';
 
 const ReceiptScanner: React.FC = () => {
@@ -25,19 +24,17 @@ const ReceiptScanner: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const addTransaction = useAddTransaction();
+  const { mutateAsync: addTransaction } = useTransactions().addTransaction;
 
   const startCamera = async () => {
     try {
       setError(null);
       setIsCapturing(true);
       
-      // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
       
-      // Store stream in ref and set to video element
       streamRef.current = stream;
       
       if (videoRef.current) {
@@ -51,13 +48,11 @@ const ReceiptScanner: React.FC = () => {
   };
 
   const stopCamera = () => {
-    // Stop all video tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
     
-    // Clear video source
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -69,21 +64,17 @@ const ReceiptScanner: React.FC = () => {
     if (!videoRef.current) return;
     
     try {
-      // Create canvas to capture frame
       const canvas = document.createElement('canvas');
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       
-      // Draw video frame to canvas
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         
-        // Convert to data URL
         const imageDataUrl = canvas.toDataURL('image/jpeg');
         setImage(imageDataUrl);
         
-        // Stop camera
         stopCamera();
       }
     } catch (err) {
@@ -98,13 +89,11 @@ const ReceiptScanner: React.FC = () => {
     
     if (!file) return;
     
-    // Check file type
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file (JPEG, PNG, etc.)');
       return;
     }
     
-    // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       setError('File is too large. Please upload an image smaller than 5MB.');
       return;
@@ -112,7 +101,6 @@ const ReceiptScanner: React.FC = () => {
     
     setIsUploading(true);
     
-    // Read file as data URL
     const reader = new FileReader();
     reader.onload = (e) => {
       setImage(e.target?.result as string);
@@ -134,7 +122,6 @@ const ReceiptScanner: React.FC = () => {
       setError(null);
       setIsProcessing(true);
       
-      // Process image with AI service
       const result = await service.processReceiptImage(image, {
         systemPrompt: `Extract information from this receipt image. 
         If the text is in German, translate it to English.
@@ -151,15 +138,12 @@ const ReceiptScanner: React.FC = () => {
         throw new Error('No data returned from AI service');
       }
       
-      // Log extracted data
       console.log('Extracted receipt data:', result.data);
       
-      // Show success notification
       toast.success('Receipt processed successfully!', {
         description: `Merchant: ${result.data.merchant}, Total: $${result.data.total}`
       });
       
-      // Set extracted data for editing
       setExtractedData(result.data);
       
     } catch (err: any) {
@@ -175,7 +159,6 @@ const ReceiptScanner: React.FC = () => {
 
   const handleSaveTransaction = async (data: ReceiptData) => {
     try {
-      // Convert receipt data to transaction format
       const transaction = {
         description: `${data.merchant} - Receipt`,
         amount: data.total || 0,
@@ -184,10 +167,8 @@ const ReceiptScanner: React.FC = () => {
         notes: data.items ? `Items: ${data.items.map(item => `${item.name} (${item.quantity || 1} x $${item.price})`).join(', ')}` : ''
       };
 
-      // Save transaction to database
-      await addTransaction.mutateAsync(transaction);
+      await addTransaction(transaction);
 
-      // Show success message
       toast.success('Transaction saved successfully!', {
         action: {
           label: 'View All',
@@ -195,7 +176,6 @@ const ReceiptScanner: React.FC = () => {
         }
       });
 
-      // Reset state
       setImage(null);
       setExtractedData(null);
     } catch (error: any) {
@@ -213,20 +193,17 @@ const ReceiptScanner: React.FC = () => {
   };
 
   const handleTabChange = (value: string) => {
-    // Clean up previous tab
     if (activeTab === 'camera' && value !== 'camera') {
       stopCamera();
     }
     
     setActiveTab(value);
     
-    // Initialize new tab
     if (value === 'camera') {
       startCamera();
     }
   };
 
-  // Clean up on unmount
   React.useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -268,7 +245,7 @@ const ReceiptScanner: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="camera" className="space-y-4">
+              <TabsContent value="camera" className="space-y-4 min-h-[300px] bg-gradient-bg">
                 {isCapturing && (
                   <div className="relative rounded-lg overflow-hidden bg-black aspect-[4/5] flex items-center justify-center">
                     <video 
@@ -288,7 +265,7 @@ const ReceiptScanner: React.FC = () => {
                 )}
                 
                 {!isCapturing && !image && (
-                  <div className="h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center p-4">
+                  <div className="h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center p-4 bg-gradient-bg">
                     <Camera className="h-10 w-10 text-muted-foreground/50 mb-4" />
                     <p className="text-muted-foreground text-center">Camera is not active</p>
                     <Button onClick={startCamera} className="mt-4">
@@ -298,10 +275,10 @@ const ReceiptScanner: React.FC = () => {
                 )}
               </TabsContent>
               
-              <TabsContent value="upload" className="space-y-4">
+              <TabsContent value="upload" className="space-y-4 min-h-[300px] bg-gradient-bg">
                 {!image && (
                   <div 
-                    className="h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center p-4 cursor-pointer"
+                    className="h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center p-4 cursor-pointer bg-gradient-bg"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <input 
@@ -338,7 +315,7 @@ const ReceiptScanner: React.FC = () => {
               )}
               
               {image && (
-                <div className="space-y-4">
+                <div className="space-y-4 bg-gradient-bg p-4 rounded-lg">
                   <div className="relative">
                     <img 
                       src={image} 
