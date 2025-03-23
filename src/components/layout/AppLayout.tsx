@@ -1,178 +1,225 @@
-import React, { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { useMobile } from '@/hooks/use-mobile';
-import {
+// Keep imports at the top
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { 
   LayoutDashboard,
   Receipt,
-  CreditCard,
   BarChart3,
+  PiggyBank,
   Settings,
+  LogOut,
   Menu,
   X,
-  TrendingUp,
-  Clock,
-  ChevronRight,
-  FileText,
-  LogOut,
-  PieChart,
-  ScanLine,
+  CreditCard,
   Camera
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { pathname } = useLocation();
-  const isMobile = useMobile();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { user, profile, logout } = useAuth();
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  // Handle logout
   const handleLogout = async () => {
     try {
       await logout();
-      toast({
-        title: 'Logged out successfully',
-        description: 'You have been logged out of your account'
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error logging out',
-        description: error.message,
-        variant: 'destructive'
-      });
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
-  const navigationItems = [
-    {
-      name: 'Dashboard',
-      path: '/dashboard',
-      icon: <LayoutDashboard className="h-5 w-5" />
-    },
-    {
-      name: 'Transactions',
-      path: '/transactions',
-      icon: <Receipt className="h-5 w-5" />
-    },
-    {
-      name: 'Scan Receipt',
-      path: '/scan-receipt',
-      icon: <ScanLine className="h-5 w-5" />
-    },
-    {
-      name: 'Bills',
-      path: '/bills',
-      icon: <FileText className="h-5 w-5" />
-    },
-    {
-      name: 'Budgets',
-      path: '/budgets',
-      icon: <PieChart className="h-5 w-5" />
-    },
-    {
-      name: 'Reports',
-      path: '/reports',
-      icon: <BarChart3 className="h-5 w-5" />
-    },
-    {
-      name: 'Settings',
-      path: '/settings',
-      icon: <Settings className="h-5 w-5" />
-    }
+  // Navigation items
+  const navItems = [
+    { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
+    { name: 'Transactions', path: '/transactions', icon: <Receipt className="h-5 w-5" /> },
+    { name: 'Scan Receipt', path: '/scan-receipt', icon: <Camera className="h-5 w-5" /> },
+    { name: 'Bills', path: '/bills', icon: <CreditCard className="h-5 w-5" /> },
+    { name: 'Reports', path: '/reports', icon: <BarChart3 className="h-5 w-5" /> },
+    { name: 'Budgets', path: '/budgets', icon: <PiggyBank className="h-5 w-5" /> },
+    { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
   ];
 
-  const renderMobile = () => (
-    <div className="flex flex-col h-full w-full overflow-hidden bg-background">
-      <header className="w-full gradient-bg py-4 px-6 flex items-center justify-between shadow-lg shadow-black/20 z-10">
-        <div className="flex items-center">
-          <Button variant="ghost" onClick={() => setMenuOpen(true)}>
-            <Menu className="h-6 w-6 text-white" />
-          </Button>
-          <Link to="/dashboard" className="text-2xl font-bold text-white ml-4">
-            Budget Sage
-          </Link>
-        </div>
-      </header>
-
-      {/* Mobile menu overlay */}
-      {menuOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setMenuOpen(false)} />
-      )}
-
-      {/* Mobile sidebar */}
-      <div className={`fixed top-0 left-0 h-screen w-4/5 gradient-bg z-50 transform ${menuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out shadow-2xl shadow-black/30`}>
-        <div className="p-4 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-lg font-semibold text-white">Navigation</span>
-            <Button variant="ghost" onClick={() => setMenuOpen(false)}>
-              <X className="h-5 w-5 text-white" />
-            </Button>
+  // If still loading or not authenticated, show loading state
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-background to-background/80">
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 container max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div className="h-full flex items-center justify-center">
+              <div className="space-y-4 text-center">
+                <div className="animate-pulse flex flex-col items-center space-y-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
+              </div>
+            </div>
           </div>
-          <nav className="flex-grow flex flex-col space-y-2 overflow-y-auto">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-4 py-2 rounded-md text-white hover:bg-accent hover:text-accent-foreground ${pathname === item.path ? 'bg-accent text-accent-foreground' : ''}`}
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.icon}
-                <span className="ml-3">{item.name}</span>
-              </Link>
-            ))}
-          </nav>
-          <div className="mt-auto pb-4">
-            <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground w-full" onClick={handleLogout}>
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
-            </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-background to-background/80">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex w-64 flex-col fixed inset-y-0">
+        <div className="flex-1 flex flex-col min-h-0 border-r border-white/10 bg-background/50 backdrop-blur-md">
+          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-4 mb-5">
+              <span className="text-2xl font-bold text-white">Budget Sage</span>
+            </div>
+            <nav className="mt-5 flex-1 px-2 space-y-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "group flex items-center px-2 py-2 text-base font-medium rounded-md transition-all",
+                    location.pathname === item.path
+                      ? "bg-primary/20 text-white"
+                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  <div className="mr-3">{item.icon}</div>
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          <div className="flex-shrink-0 flex border-t border-white/10 p-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center w-full text-left">
+                  <div className="flex items-center">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarImage src={user?.user_metadata?.avatar_url} />
+                      <AvatarFallback>
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {user?.user_metadata?.full_name || user?.email || 'User'}
+                      </p>
+                      <p className="text-xs text-white/70 truncate max-w-[140px]">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
 
-      <main className="flex-grow w-full bg-background p-0 overflow-y-auto">
-        {children}
-      </main>
-    </div>
-  );
-
-  const renderDesktop = () => (
-    <div className="flex h-full w-full overflow-hidden">
-      <aside className="w-64 gradient-bg py-8 px-4 flex flex-col h-full shadow-2xl shadow-black/30 relative z-10">
-        <Link to="/dashboard" className="text-3xl font-bold text-white mb-8">
-          Budget Sage
-        </Link>
-        <nav className="flex-grow flex flex-col space-y-2 overflow-y-auto">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center px-4 py-2 rounded-md text-white hover:bg-accent hover:text-accent-foreground ${pathname === item.path ? 'bg-accent text-accent-foreground' : ''}`}
-            >
-              {item.icon}
-              <span className="ml-3">{item.name}</span>
-            </Link>
-          ))}
-        </nav>
-        <div className="mt-auto pb-4">
-          <Button variant="ghost" className="justify-start text-white hover:bg-accent hover:text-accent-foreground w-full" onClick={handleLogout}>
-            <LogOut className="h-5 w-5 mr-3" />
-            Logout
-          </Button>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-10 bg-background/80 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center">
+            <span className="text-xl font-bold text-white">Budget Sage</span>
+          </div>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[250px] sm:w-[300px] bg-background/95 backdrop-blur-md border-r border-white/10">
+              <div className="flex flex-col h-full">
+                <div className="flex-1 py-6">
+                  <div className="px-2 mb-6">
+                    <span className="text-xl font-bold text-white">Budget Sage</span>
+                  </div>
+                  <nav className="space-y-1 px-2">
+                    {navItems.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={cn(
+                          "group flex items-center px-2 py-2 text-base font-medium rounded-md transition-all",
+                          location.pathname === item.path
+                            ? "bg-primary/20 text-white"
+                            : "text-white/70 hover:bg-white/10 hover:text-white"
+                        )}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <div className="mr-3">{item.icon}</div>
+                        {item.name}
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
+                <div className="border-t border-white/10 p-4">
+                  <Button variant="ghost" className="flex items-center w-full text-left" onClick={handleLogout}>
+                    <LogOut className="mr-3 h-5 w-5" />
+                    <span>Log out</span>
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-      </aside>
-      <main className="flex-grow bg-background p-0 overflow-y-auto">
-        {children}
-      </main>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 md:pl-64">
+        <main className="flex-1">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              {/* Mobile spacing for fixed header */}
+              <div className="md:hidden h-16" />
+              {children}
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
-
-  return isMobile ? renderMobile() : renderDesktop();
 };
 
 export default AppLayout;

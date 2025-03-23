@@ -1,3 +1,4 @@
+
 /**
  * AI Configuration Panel
  * 
@@ -5,14 +6,14 @@
  * provider selection, API key management, and model selection.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAI } from '@/context/AIProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import CustomCard, { CardContent } from '@/components/ui/CustomCard';
-import { Eye, EyeOff, Save, X, CheckCircle2, Zap } from 'lucide-react';
+import { Eye, EyeOff, Save, X, CheckCircle2, Zap, ClipboardPaste } from 'lucide-react';
 import { toast } from 'sonner';
 import { testApiKey } from '@/services/ai/apiTester';
 
@@ -34,6 +35,11 @@ const AIConfigPanel: React.FC = () => {
   const [testingApi, setTestingApi] = useState(false);
   const apiKeyInputRef = useRef<HTMLInputElement>(null);
   
+  // Update local state when config changes (e.g. on provider change)
+  useEffect(() => {
+    setTempApiKey(config.apiKey);
+  }, [config.apiKey]);
+
   const handleSaveApiKey = () => {
     // Basic validation for API key format
     if (!tempApiKey || tempApiKey.trim() === '') {
@@ -43,9 +49,6 @@ const AIConfigPanel: React.FC = () => {
     
     // Clear any previous errors
     setApiKeyError(null);
-    
-    // Log for debugging
-    console.log('Saving API key:', tempApiKey.trim().substring(0, 5) + '...');
     
     // Save the API key
     setApiKey(tempApiKey.trim());
@@ -57,6 +60,18 @@ const AIConfigPanel: React.FC = () => {
     setApiKeyError(null);
     if (apiKeyInputRef.current) {
       apiKeyInputRef.current.focus();
+    }
+  };
+  
+  const handlePasteApiKey = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setTempApiKey(text.trim());
+      setApiKeyError(null);
+      toast.success('API key pasted successfully');
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+      toast.error('Failed to paste from clipboard');
     }
   };
   
@@ -88,8 +103,6 @@ const AIConfigPanel: React.FC = () => {
       setTestingApi(false);
     }
   };
-  
-  // We've simplified the UI and removed the clipboard button
   
   const getProviderLabel = (provider: string): string => {
     switch (provider) {
@@ -149,7 +162,6 @@ const AIConfigPanel: React.FC = () => {
         <div>
           <Label htmlFor="api-key">API Key</Label>
           <div className="space-y-4">
-            {/* Simple text input for API key */}
             <div className="relative">
               <Input
                 id="api-key"
@@ -160,13 +172,20 @@ const AIConfigPanel: React.FC = () => {
                   setTempApiKey(e.target.value);
                   setApiKeyError(null); // Clear error on change
                 }}
-                onPaste={(e) => {
-                  console.log('Paste event detected');
-                }}
                 placeholder="Enter your API key"
                 className={`bg-background/40 border-white/30 ${apiKeyError ? 'border-red-500' : ''}`}
               />
               <div className="absolute right-0 top-0 h-full flex">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  className="h-full"
+                  onClick={handlePasteApiKey}
+                  title="Paste API key from clipboard"
+                >
+                  <ClipboardPaste className="h-4 w-4" />
+                </Button>
                 {tempApiKey && (
                   <Button
                     variant="ghost"
@@ -237,8 +256,7 @@ const AIConfigPanel: React.FC = () => {
           
           {/* Help text */}
           <p className="text-xs text-muted-foreground mt-4">
-            Enter your API key from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-blue-400 hover:text-blue-300">Google AI Studio</a>.
-            Your API key will be saved securely and persisted between sessions.
+            Your API key will be saved securely in the database and persisted between sessions.
           </p>
         </div>
         
@@ -261,7 +279,7 @@ const AIConfigPanel: React.FC = () => {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
-            {provider === 'gemini' && 'Gemini 2.0 Flash is recommended for receipt scanning'}
+            {provider === 'gemini' && 'Gemini Flash models are recommended for receipt scanning'}
           </p>
         </div>
       </CardContent>

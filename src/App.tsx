@@ -1,62 +1,39 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { useAuth } from '@/hooks/useAuth';
-import PWAUpdateNotification from '@/components/ui/PWAUpdateNotification';
+import { useAuth } from '@/hooks/useAuth.ts';
+import Dashboard from '@/pages/Dashboard';
+import Auth from '@/pages/Auth';
+import Transactions from '@/pages/Transactions';
+import Reports from '@/pages/Reports';
+import Budgets from '@/pages/Budgets';
+import Settings from '@/pages/Settings';
+import NotFound from '@/pages/NotFound';
+import ScanReceipt from '@/pages/ScanReceipt';
+import Bills from '@/pages/Bills';
 import './App.css';
 
-// Lazy load pages for better performance
-const Dashboard = lazy(() => import('@/pages/Dashboard'));
-const Transactions = lazy(() => import('@/pages/Transactions'));
-const Budgets = lazy(() => import('@/pages/Budgets'));
-const Reports = lazy(() => import('@/pages/Reports'));
-const Settings = lazy(() => import('@/pages/Settings'));
-const Auth = lazy(() => import('@/pages/Auth'));
-const Index = lazy(() => import('@/pages/Index'));
-const NotFound = lazy(() => import('@/pages/NotFound'));
-const Bills = lazy(() => import('@/pages/Bills'));
-const ScanReceipt = lazy(() => import('@/pages/ScanReceipt'));
-
-// Loading fallback
-const Loading = () => (
-  <div className="flex h-screen items-center justify-center">
-    <div className="h-16 w-16 animate-spin rounded-full border-b-2 border-primary"></div>
-  </div>
-);
-
-const App = () => {
+const App: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
-    <>
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Index />} />
-          <Route path="/auth" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Auth />} />
-          <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
-          <Route path="/transactions" element={isAuthenticated ? <Transactions /> : <Navigate to="/auth" />} />
-          <Route path="/bills" element={isAuthenticated ? <Bills /> : <Navigate to="/auth" />} />
-          <Route path="/scan-receipt" element={isAuthenticated ? <ScanReceipt /> : <Navigate to="/auth" />} />
-          <Route path="/budgets" element={isAuthenticated ? <Budgets /> : <Navigate to="/auth" />} />
-          <Route path="/reports" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
-          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-      <Toaster />
-      <PWAUpdateNotification />
-    </>
+    <Routes>
+      <Route path="/auth" element={!isAuthenticated ? <Auth /> : <Navigate to="/dashboard" />} />
+      <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
+      <Route path="/transactions" element={isAuthenticated ? <Transactions /> : <Navigate to="/auth" />} />
+      <Route path="/reports" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
+      <Route path="/budgets" element={isAuthenticated ? <Budgets /> : <Navigate to="/auth" />} />
+      <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
+      <Route path="/scan-receipt" element={isAuthenticated ? <ScanReceipt /> : <Navigate to="/auth" />} />
+      <Route path="/bills" element={isAuthenticated ? <Bills /> : <Navigate to="/auth" />} />
+      <Route path="/" element={<Navigate to="/dashboard" />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
 export default App;
+
