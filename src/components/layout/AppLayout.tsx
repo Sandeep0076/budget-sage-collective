@@ -14,7 +14,9 @@ import {
   ChevronRight,
   FileText,
   LogOut,
-  PieChart
+  PieChart,
+  ScanLine,
+  Camera
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -56,6 +58,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       name: 'Transactions',
       path: '/transactions',
       icon: <Receipt className="h-5 w-5" />
+    },
+    {
+      name: 'Scan Receipt',
+      path: '/scan-receipt',
+      icon: <ScanLine className="h-5 w-5" />
     },
     {
       name: 'Bills',

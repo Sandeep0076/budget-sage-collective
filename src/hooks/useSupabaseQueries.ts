@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
 
 // Types based on our database schema
@@ -19,6 +20,8 @@ export interface Profile {
   avatar_url: string | null;
   currency: string;
 }
+
+export type AIConfig = Database['public']['Tables']['ai_config']['Row']
 
 export interface Category {
   id: string;
@@ -345,6 +348,12 @@ export const useMonthlySpending = (month: number, year: number) => {
   return useQuery({
     queryKey: ['monthlySpending', month, year],
     queryFn: async () => {
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('Not authenticated');
+      }
+      
       // Create date range for the month
       const startDate = new Date(year, month - 1, 1).toISOString().split('T')[0];
       const endDate = new Date(year, month, 0).toISOString().split('T')[0];
@@ -361,6 +370,7 @@ export const useMonthlySpending = (month: number, year: number) => {
             icon
           )
         `)
+        .eq('user_id', userData.user.id)
         .gte('transaction_date', startDate)
         .lte('transaction_date', endDate);
       
@@ -408,12 +418,19 @@ export const useYearlyFinancials = (year: number) => {
   return useQuery({
     queryKey: ['yearlyFinancials', year],
     queryFn: async () => {
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('Not authenticated');
+      }
+      
       const startDate = new Date(year, 0, 1).toISOString().split('T')[0];
       const endDate = new Date(year, 11, 31).toISOString().split('T')[0];
       
       const { data, error } = await supabase
         .from('transactions')
         .select('amount, transaction_date, transaction_type')
+        .eq('user_id', userData.user.id)
         .gte('transaction_date', startDate)
         .lte('transaction_date', endDate);
       
@@ -669,6 +686,160 @@ export const useUpdateProfile = () => {
       toast({
         title: 'Error updating profile',
         description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+/**
+ * Fetches the AI configuration for the current user
+ */
+export const useAIConfig = () => {
+  return useQuery({
+    queryKey: ['aiConfig'],
+    queryFn: async () => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        
+        if (!user.user) {
+          throw new Error('Not authenticated');
+        }
+        
+        const { data, error } = await supabase
+          .from('ai_config')
+          .select('*')
+          .eq('user_id', user.user.id)
+          .single();
+        
+        if (error) {
+          // Handle table doesn't exist error
+          if (error.code === '42P01') {
+            console.warn('AI config table does not exist yet');
+            return null;
+          }
+          
+          // Handle no rows returned
+          if (error.code === 'PGRST116') {
+            return null;
+          }
+          
+          console.error('Error fetching AI config:', error);
+          throw error;
+        }
+        
+        return data as AIConfig;
+      } catch (error) {
+        console.error('Error in useAIConfig:', error);
+        return null; // Return null instead of throwing to prevent app crashes
+      }
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false, // Don't retry on failure
+  });
+};
+
+/**
+ * Saves or updates the AI configuration for the current user
+ */
+export const useSaveAIConfig = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (configData: {
+      provider: string;
+      api_key: string;
+      model_name: string;
+    }) => {
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        
+        if (!user.user) {
+          throw new Error('Not authenticated');
+        }
+        
+        // Try to check if config already exists
+        try {
+          const { data: existingConfig, error: checkError } = await supabase
+            .from('ai_config')
+            .select('id')
+            .eq('user_id', user.user.id)
+            .single();
+          
+          // If table doesn't exist, we'll catch it in the outer try/catch
+          if (checkError && checkError.code !== 'PGRST116') {
+            console.error('Error checking AI config:', checkError);
+            throw checkError;
+          }
+          
+          let result;
+          if (existingConfig) {
+            // Update existing config
+            const { data, error } = await supabase
+              .from('ai_config')
+              .update({
+                ...configData,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingConfig.id)
+              .select()
+              .single();
+            
+            if (error) {
+              console.error('Error updating AI config:', error);
+              throw error;
+            }
+            result = data;
+          } else {
+            // Create new config
+            const { data, error } = await supabase
+              .from('ai_config')
+              .insert({
+                user_id: user.user.id,
+                ...configData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+            
+            if (error) {
+              console.error('Error creating AI config:', error);
+              throw error;
+            }
+            result = data;
+          }
+          
+          return result;
+        } catch (innerError: any) {
+          // If table doesn't exist, inform the user
+          if (innerError.code === '42P01') {
+            toast({
+              title: 'Database setup required',
+              description: 'The AI configuration table needs to be created in your database.',
+              variant: 'destructive',
+            });
+          }
+          throw innerError;
+        }
+      } catch (error: any) {
+        console.error('Error in useSaveAIConfig:', error);
+        // Re-throw to trigger onError
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aiConfig'] });
+      toast({
+        title: 'AI configuration saved',
+        description: 'Your AI settings have been saved successfully.',
+      });
+    },
+    onError: (error: any) => {
+      console.error('AI config save error:', error);
+      toast({
+        title: 'Error saving AI configuration',
+        description: error.message || 'An unknown error occurred',
         variant: 'destructive',
       });
     },

@@ -7,6 +7,7 @@ import App from './App';
 import { ThemeProvider } from "./components/ui/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from '@/context/AuthProvider';
+import { AIProvider } from '@/context/AIProvider';
 import { registerServiceWorker } from './pwaRegistration';
 import './index.css';
 
@@ -34,8 +35,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="dark" storageKey="budget-sage-theme">
           <AuthProvider>
-            <App />
-            <Toaster richColors />
+            <AIProvider>
+              <App />
+              <Toaster richColors />
+            </AIProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

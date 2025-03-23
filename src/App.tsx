@@ -17,6 +17,7 @@ const Auth = lazy(() => import('@/pages/Auth'));
 const Index = lazy(() => import('@/pages/Index'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 const Bills = lazy(() => import('@/pages/Bills'));
+const ScanReceipt = lazy(() => import('@/pages/ScanReceipt'));
 
 // Loading fallback
 const Loading = () => (
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
           <Route path="/transactions" element={isAuthenticated ? <Transactions /> : <Navigate to="/auth" />} />
           <Route path="/bills" element={isAuthenticated ? <Bills /> : <Navigate to="/auth" />} />
+          <Route path="/scan-receipt" element={isAuthenticated ? <ScanReceipt /> : <Navigate to="/auth" />} />
           <Route path="/budgets" element={isAuthenticated ? <Budgets /> : <Navigate to="/auth" />} />
           <Route path="/reports" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
           <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
