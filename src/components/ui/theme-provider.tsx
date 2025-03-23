@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -37,7 +36,7 @@ const initialState: ThemeProviderState = {
   setCustomColors: () => null,
 };
 
-// Predefined gradient themes
+// Predefined gradient themes - now properly exported
 export const gradientThemes = {
   blue: { startColor: "#0091FF", endColor: "#006FE8" },
   purple: { startColor: "#9333EA", endColor: "#6D28D9" },
