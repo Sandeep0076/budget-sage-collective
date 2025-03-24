@@ -131,7 +131,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   
   // Filter transactions based on search term and date range
   const filteredTransactions = useMemo(() => {
-    if (!transactions) return [];
+    if (!transactions) {
+      console.log("No transactions data available");
+      return [];
+    }
     
     if (!Array.isArray(transactions)) {
       console.error("Transactions is not an array:", transactions);
@@ -139,8 +142,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
     }
     
     return transactions.filter((transaction) => {
+      if (!transaction) {
+        return false;
+      }
+      
       const matchesSearch = 
-        transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       
       const transactionDate = new Date(transaction.transaction_date);
@@ -297,7 +304,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.length === 0 ? (
+              {!Array.isArray(filteredTransactions) || filteredTransactions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     {searchTerm 
@@ -341,7 +348,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
                   </TableRow>
                 ))
               )}
-              {filteredTransactions.length > 50 && (
+              {Array.isArray(filteredTransactions) && filteredTransactions.length > 50 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                     Showing 50 of {filteredTransactions.length} transactions. Please use search or date filters to narrow results.

@@ -101,30 +101,40 @@ export const useTransactions = (options?: { limit?: number, startDate?: string, 
   const fetchTransactions = async () => {
     if (!user) return [];
 
-    let query = supabase
-      .from('transactions')
-      .select('*, categories(*)')
-      .eq('user_id', user.id)
-      .order('transaction_date', { ascending: false });
-    
-    // Apply date range filter if provided
-    if (options?.startDate && options?.endDate) {
-      query = query.gte('transaction_date', options.startDate)
-               .lte('transaction_date', options.endDate);
-    }
-    
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+    try {
+      let query = supabase
+        .from('transactions')
+        .select('*, categories(*)')
+        .eq('user_id', user.id)
+        .order('transaction_date', { ascending: false });
+      
+      // Apply date range filter if provided
+      if (options?.startDate && options?.endDate) {
+        query = query.gte('transaction_date', options.startDate)
+                .lte('transaction_date', options.endDate);
+      }
+      
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
 
-    const { data, error } = await query;
+      const { data, error } = await query;
 
-    if (error) {
-      console.error('Error fetching transactions:', error);
-      throw error;
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        throw error;
+      }
+
+      if (!data || !Array.isArray(data)) {
+        console.warn('Transactions data is not an array:', data);
+        return [];
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error);
+      return [];
     }
-
-    return data;
   };
 
   // Execute the query and return results directly

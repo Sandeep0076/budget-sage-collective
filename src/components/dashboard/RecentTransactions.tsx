@@ -17,7 +17,7 @@ import { ArrowRight, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const RecentTransactions: React.FC = () => {
-  const { data: transactions, isLoading } = useTransactions({ limit: 5 });
+  const { data: transactions = [], isLoading } = useTransactions({ limit: 5 });
   const { data: profile } = useProfile();
   
   // Get user's currency preference
@@ -52,7 +52,7 @@ const RecentTransactions: React.FC = () => {
                 <div className="h-4 w-16 bg-muted rounded"></div>
               </div>
             ))
-          ) : transactions && transactions.length === 0 ? (
+          ) : !Array.isArray(transactions) || transactions.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               <p>No transactions yet.</p>
               <p className="text-sm mt-2">Add your first transaction to see it here.</p>
