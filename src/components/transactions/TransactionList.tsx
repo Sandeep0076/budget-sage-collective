@@ -131,12 +131,17 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   
   // Filter transactions based on search term and date range
   const filteredTransactions = useMemo(() => {
-    if (!transactions || !Array.isArray(transactions)) return [];
+    if (!transactions) return [];
+    
+    if (!Array.isArray(transactions)) {
+      console.error("Transactions is not an array:", transactions);
+      return [];
+    }
     
     return transactions.filter((transaction) => {
       const matchesSearch = 
         transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        (transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       
       const transactionDate = new Date(transaction.transaction_date);
       const matchesDateRange = 

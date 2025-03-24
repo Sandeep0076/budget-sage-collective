@@ -65,7 +65,7 @@ const RecentTransactions: React.FC = () => {
             </div>
           ) : (
             <>
-              {transactions && transactions.map((transaction: any) => (
+              {transactions && Array.isArray(transactions) && transactions.map((transaction: any) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between py-3 border-b border-border last:border-0 transition-all duration-200 hover:bg-secondary/50 rounded-lg px-2"

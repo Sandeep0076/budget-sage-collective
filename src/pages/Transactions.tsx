@@ -14,6 +14,7 @@ import TransactionForm from '@/components/transactions/TransactionForm';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const Transactions = () => {
   const [showForm, setShowForm] = useState(false);
@@ -47,15 +48,15 @@ const Transactions = () => {
     <AppLayout>
       <div className="space-y-6 animate-fade-in p-6 h-full overflow-y-auto bg-gradient-to-b from-background to-background/80">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong className="font-bold">Error: </strong>
-            <span className="block sm:inline">{error}</span>
-            <span className="absolute top-0 bottom-0 right-0 px-4 py-3">
-              <Button variant="ghost" onClick={() => setError(null)}>
+          <Alert variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button variant="ghost" size="icon" onClick={() => setError(null)}>
                 <X className="h-4 w-4" />
               </Button>
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
         
         <div className="flex items-center justify-between">
