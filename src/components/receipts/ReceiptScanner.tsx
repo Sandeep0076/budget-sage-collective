@@ -155,7 +155,8 @@ const ReceiptScanner = () => {
         }
       `;
       
-      const response = await service.generateText(prompt, image);
+      // Use the generateContent method instead of generateText (which doesn't exist)
+      const response = await service.generateContent(prompt, image);
       console.log('AI response:', response);
       
       // Try to parse the response as JSON
@@ -199,23 +200,24 @@ const ReceiptScanner = () => {
   };
   
   // Function to save transaction data
-  const saveTransaction = async (data: ReceiptData) => {
-    try {
-      await createTransaction.mutateAsync({
-        description: data.description,
-        amount: data.amount,
-        transaction_date: data.date,
-        transaction_type: 'expense',
-        notes: data.notes || undefined,
-        // Could add category mapping here if we had a way to map text categories to IDs
-      });
-      
-      toast.success('Transaction saved successfully');
-      resetScanner();
-    } catch (err) {
-      console.error('Error saving transaction:', err);
-      toast.error('Failed to save transaction');
-    }
+  const saveTransaction = (data: ReceiptData) => {
+    createTransaction.mutate({
+      description: data.description,
+      amount: data.amount,
+      transaction_date: data.date,
+      transaction_type: 'expense',
+      notes: data.notes || undefined,
+      // Could add category mapping here if we had a way to map text categories to IDs
+    }, {
+      onSuccess: () => {
+        toast.success('Transaction saved successfully');
+        resetScanner();
+      },
+      onError: (err) => {
+        console.error('Error saving transaction:', err);
+        toast.error('Failed to save transaction');
+      }
+    });
   };
   
   return (
