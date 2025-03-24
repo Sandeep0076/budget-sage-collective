@@ -15,27 +15,7 @@ import { useAI } from '@/context/AIProvider';
 import AIConfigPanel from './AIConfigPanel';
 import ReceiptDataEditor from './ReceiptDataEditor';
 import { useCreateTransaction } from '@/hooks/useSupabaseQueries';
-import { ReceiptData as AIReceiptData } from '@/services/ai/types';
-
-// Define a local ReceiptData interface that is compatible with our component needs
-export interface ReceiptData {
-  description: string;
-  amount: number;
-  date: string;
-  category?: string;
-  notes?: string;
-}
-
-// Helper function to convert between ReceiptData formats
-const convertAIReceiptDataToComponentData = (aiData: AIReceiptData): ReceiptData => {
-  return {
-    description: aiData.merchant || '',
-    amount: aiData.total || 0,
-    date: aiData.date || new Date().toISOString().split('T')[0],
-    category: aiData.category,
-    notes: aiData.items?.map(item => `${item.name}: ${item.price}`).join(', ')
-  };
-};
+import { ReceiptData, ReceiptItem } from '@/services/ai/types';
 
 const ReceiptScanner = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -148,13 +128,28 @@ const ReceiptScanner = () => {
     setError(null);
     
     try {
+      const categoryOptions = [
+        "Groceries", "Dining", "Entertainment", "Household", "Utilities", 
+        "Transportation", "Health", "Education", "Personal Care", "Shopping", 
+        "Travel", "Gifts", "Electronics", "Clothing", "Home Improvement", 
+        "General Merchandise", "Office Supplies"
+      ];
+      
       const prompt = `
         Extract the following information from this receipt image:
-        1. Store/merchant name or transaction description
+        1. Store/merchant name
         2. Total amount (just the number)
         3. Date of purchase (in YYYY-MM-DD format if possible)
-        4. Any category information (e.g., groceries, restaurant, etc.)
-        5. Any additional notes or details
+        4. Item details with individual names and prices
+        5. Tax amount if present
+
+        For each individual item in the receipt, please provide:
+        - Item name (translated to English if in another language)
+        - Item price (as a number)
+        - Item quantity if available
+
+        Please categorize each item into ONE of these categories ONLY:
+        ${categoryOptions.join(', ')}
 
         If any text is in German, please translate it to English first.
         
@@ -164,7 +159,9 @@ const ReceiptScanner = () => {
           "total": number,
           "date": "string",
           "category": "string",
-          "items": [{"name": "string", "price": number}],
+          "items": [
+            {"name": "string", "price": number, "quantity": number, "category": "string"}
+          ],
           "taxAmount": number,
           "tipAmount": number,
           "paymentMethod": "string"
@@ -177,9 +174,15 @@ const ReceiptScanner = () => {
         const result = await service.processReceiptImage(image, { prompt });
         
         if (result.data) {
-          // Convert the AI receipt data to our component format
-          const receiptData = convertAIReceiptDataToComponentData(result.data);
-          setExtractedData(receiptData);
+          // Add default categories for items if missing
+          const updatedData = {
+            ...result.data,
+            items: result.data.items.map(item => ({
+              ...item,
+              category: item.category || result.data.category || 'General Merchandise'
+            }))
+          };
+          setExtractedData(updatedData);
         } else if (result.error) {
           // Fall back to using generateContent if there's an error with processReceiptImage
           console.log('Falling back to generateContent due to error:', result.error);
@@ -212,21 +215,11 @@ const ReceiptScanner = () => {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : response;
         
-        // Try to parse as AI receipt data first
-        const parsedAIData = JSON.parse(jsonString) as Partial<AIReceiptData>;
-        
-        // If we have merchant and total, we can convert it
-        if (parsedAIData.merchant !== undefined && parsedAIData.total !== undefined) {
-          const componentData = convertAIReceiptDataToComponentData(parsedAIData as AIReceiptData);
-          setExtractedData(componentData);
-          return;
-        }
-        
-        // Try to parse as component receipt data
-        const parsedData = JSON.parse(jsonString) as Partial<ReceiptData>;
+        // Parse the JSON
+        const parsedData = JSON.parse(jsonString);
         
         // Validate the parsed data has the required fields
-        if (!parsedData.description || parsedData.amount === undefined) {
+        if (!parsedData.merchant || parsedData.total === undefined || !Array.isArray(parsedData.items)) {
           throw new Error('Missing required fields in the extracted data');
         }
         
@@ -235,7 +228,16 @@ const ReceiptScanner = () => {
           parsedData.date = new Date().toISOString().split('T')[0];
         }
         
-        setExtractedData(parsedData as ReceiptData);
+        // Add category to items if missing
+        const dataWithItemCategories = {
+          ...parsedData,
+          items: parsedData.items.map((item: ReceiptItem) => ({
+            ...item,
+            category: item.category || parsedData.category || 'General Merchandise'
+          }))
+        };
+        
+        setExtractedData(dataWithItemCategories);
       } catch (err) {
         console.error('Error parsing JSON response:', err);
         toast.error('Could not parse the extracted data');
@@ -257,23 +259,28 @@ const ReceiptScanner = () => {
   
   // Function to save transaction data
   const saveTransaction = (data: ReceiptData) => {
-    createTransaction.mutate({
-      description: data.description,
-      amount: data.amount,
-      transaction_date: data.date,
-      transaction_type: 'expense',
-      notes: data.notes || undefined,
-      // Could add category mapping here if we had a way to map text categories to IDs
-    }, {
-      onSuccess: () => {
-        toast.success('Transaction saved successfully');
-        resetScanner();
-      },
-      onError: (err) => {
-        console.error('Error saving transaction:', err);
-        toast.error('Failed to save transaction');
-      }
+    // Save each receipt item as an individual transaction
+    const promises = data.items.map(item => {
+      return createTransaction.mutate({
+        description: `${item.name} (${data.merchant})`,
+        amount: item.price,
+        transaction_date: data.date,
+        transaction_type: 'expense',
+        notes: `Part of receipt from ${data.merchant}. Total receipt amount: ${data.total}`,
+        category: item.category || data.category || 'General Merchandise',
+      });
     });
+    
+    // Wait for all transactions to be created
+    Promise.all(promises)
+      .then(() => {
+        toast.success(`${data.items.length} transactions saved successfully`);
+        resetScanner();
+      })
+      .catch((err) => {
+        console.error('Error saving transactions:', err);
+        toast.error('Failed to save some transactions');
+      });
   };
   
   return (
@@ -389,7 +396,6 @@ const ReceiptScanner = () => {
       {/* Data Editor */}
       {extractedData && (
         <ReceiptDataEditor 
-          // Since our ReceiptDataEditor expects our component's ReceiptData type, this is fine
           receiptData={extractedData} 
           onSave={saveTransaction}
           onCancel={resetScanner}

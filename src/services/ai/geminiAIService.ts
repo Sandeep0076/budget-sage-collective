@@ -1,3 +1,4 @@
+
 /**
  * Gemini AI Service
  * 
@@ -68,10 +69,11 @@ export class GeminiAIService extends BaseAIService implements AIService {
           - name: The item name TRANSLATED TO ENGLISH
           - price: The item price as a number
           - quantity: The quantity if available
+          - category: The category for this specific item if available
         - taxAmount: The tax amount if present
         - tipAmount: The tip amount if present
         - paymentMethod: The payment method if available (translated to English)
-        - category: The category of purchase (e.g., "Groceries", "Dining", "Entertainment")
+        - category: The general category of purchase (e.g., "Groceries", "Dining", "Entertainment")
         
         ${options?.prompt || ''}
         
@@ -142,12 +144,71 @@ export class GeminiAIService extends BaseAIService implements AIService {
     }
   }
   
+  async generateContent(prompt: string, imageData: string | Blob): Promise<string> {
+    try {
+      // Convert Blob to base64 if needed
+      let base64Image: string;
+      if (imageData instanceof Blob) {
+        base64Image = await this.blobToBase64(imageData);
+      } else {
+        base64Image = imageData;
+      }
+      
+      // Remove data URL prefix if present
+      if (base64Image.startsWith('data:image')) {
+        base64Image = base64Image.split(',')[1];
+      }
+      
+      // Create model with Langchain
+      const model = new ChatGoogleGenerativeAI({
+        apiKey: this.config.apiKey,
+        modelName: this.config.modelName || "gemini-2.0-flash",
+        maxOutputTokens: this.config.maxTokens || 2048,
+        temperature: this.config.temperature || 0.2,
+      });
+      
+      // Create a human message with text and image
+      const message = new HumanMessage({
+        content: [
+          {
+            type: "text",
+            text: prompt
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${base64Image}`
+            }
+          }
+        ]
+      });
+      
+      // Process the image
+      const response = await model.invoke([message]);
+      
+      // Return the content as string
+      if (typeof response.content === 'string') {
+        return response.content;
+      } else if (Array.isArray(response.content)) {
+        return response.content
+          .filter(part => typeof part === 'object' && part !== null && 'text' in part)
+          .map(part => (part as any).text)
+          .join('');
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (error) {
+      console.error('Error in generateContent:', error);
+      throw error;
+    }
+  }
+  
   getAvailableModels(): string[] {
     return [
-      "gemini-2.0-flash",
-      "gemini-2.0-pro",
-      "gemini-1.5-flash",
-      "gemini-1.5-pro"
+      'gemini-2.0-flash',
+      'gemini-2.0-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
     ];
   }
   

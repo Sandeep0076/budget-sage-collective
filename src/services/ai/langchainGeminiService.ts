@@ -1,3 +1,4 @@
+
 /**
  * LangChain Gemini AI Service
  * 
@@ -74,7 +75,7 @@ export class LangchainGeminiService extends BaseAIService implements AIService {
                   "date": "string (YYYY-MM-DD format)",
                   "total": number,
                   "items": [
-                    {"name": "string", "price": number, "quantity": number (optional)}
+                    {"name": "string", "price": number, "quantity": number (optional), "category": "string (optional)"}
                   ],
                   "taxAmount": number (optional),
                   "tipAmount": number (optional),
@@ -125,6 +126,58 @@ export class LangchainGeminiService extends BaseAIService implements AIService {
     } catch (error) {
       console.error("Error in LangchainGeminiService:", error);
       return this.handleError(error);
+    }
+  }
+  
+  async generateContent(prompt: string, imageData: string | Blob): Promise<string> {
+    try {
+      // Convert Blob to base64 if needed
+      let base64Image: string;
+      if (imageData instanceof Blob) {
+        base64Image = await this.blobToBase64(imageData);
+      } else {
+        base64Image = imageData;
+      }
+      
+      // Remove data URL prefix if present
+      if (base64Image.startsWith('data:image')) {
+        base64Image = base64Image.split(',')[1];
+      }
+      
+      // Create LangChain model instance
+      const llm = new ChatGoogleGenerativeAI({
+        apiKey: this.config.apiKey,
+        modelName: this.config.modelName || "gemini-1.5-flash-002",
+        maxOutputTokens: this.config.maxTokens || 2048,
+        temperature: this.config.temperature || 0.2,
+      });
+      
+      // Construct the LangChain message
+      const message = new HumanMessage({
+        content: [
+          {
+            type: "text",
+            text: prompt
+          },
+          {
+            type: "image_url",
+            image_url: `data:image/jpeg;base64,${base64Image}`,
+          },
+        ],
+      });
+      
+      // Invoke the model
+      const result = await llm.invoke([message]);
+      
+      // Return the content as a string
+      if (typeof result.content === 'string') {
+        return result.content;
+      } else {
+        throw new Error("Unexpected content type from model");
+      }
+    } catch (error) {
+      console.error("Error in generateContent:", error);
+      throw error;
     }
   }
   
