@@ -9,14 +9,15 @@
 
 import React from 'react';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { useTransactions, useProfile } from '@/hooks/useSupabaseQueries';
+import { useTransactions } from '@/hooks/useSupabaseQueries';
+import { useProfile } from '@/hooks/useSupabaseQueries';
 import CustomCard, { CardHeader, CardTitle, CardContent } from '@/components/ui/CustomCard';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const RecentTransactions: React.FC = () => {
-  const { data: transactions = [], isLoading } = useTransactions({ limit: 5 });
+  const { data: transactions, isLoading } = useTransactions({ limit: 5 });
   const { data: profile } = useProfile();
   
   // Get user's currency preference
@@ -51,7 +52,7 @@ const RecentTransactions: React.FC = () => {
                 <div className="h-4 w-16 bg-muted rounded"></div>
               </div>
             ))
-          ) : transactions.length === 0 ? (
+          ) : transactions && transactions.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               <p>No transactions yet.</p>
               <p className="text-sm mt-2">Add your first transaction to see it here.</p>
@@ -64,7 +65,7 @@ const RecentTransactions: React.FC = () => {
             </div>
           ) : (
             <>
-              {transactions.map((transaction: any) => (
+              {transactions && transactions.map((transaction: any) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between py-3 border-b border-border last:border-0 transition-all duration-200 hover:bg-secondary/50 rounded-lg px-2"

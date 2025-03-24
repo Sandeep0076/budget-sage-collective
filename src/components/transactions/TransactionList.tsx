@@ -31,7 +31,8 @@ import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Edit, MoreVertical, Trash2, Search, Filter, Plus, Calendar as CalendarIcon } from 'lucide-react';
-import { useTransactions, useProfile } from '@/hooks/useSupabaseQueries';
+import { useTransactions } from '@/hooks/useSupabaseQueries';
+import { useProfile } from '@/hooks/useSupabaseQueries';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -122,22 +123,29 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   const formattedStartDate = startDate.toISOString().split('T')[0];
   const formattedEndDate = endDate.toISOString().split('T')[0];
   
-  // Fetch transactions with date range filter
-  const { data: transactions = [], isLoading } = useTransactions({
-    startDate: formattedStartDate,
-    endDate: formattedEndDate
-  });
+  // Fetch transactions
+  const { data: transactions = [], isLoading } = useTransactions();
   
   // Get user's currency preference
   const userCurrency = profile?.currency || 'EUR';
   
-  // Filter transactions based on search term - memoize to prevent unnecessary recalculations
+  // Filter transactions based on search term and date range
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction: any) => 
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [transactions, searchTerm]);
+    if (!transactions || !Array.isArray(transactions)) return [];
+    
+    return transactions.filter((transaction) => {
+      const matchesSearch = 
+        transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const transactionDate = new Date(transaction.transaction_date);
+      const matchesDateRange = 
+        transactionDate >= startDate && 
+        transactionDate <= endDate;
+      
+      return matchesSearch && matchesDateRange;
+    });
+  }, [transactions, searchTerm, startDate, endDate]);
   
   // Function to delete a transaction
   const handleDelete = async (id: string) => {
@@ -175,7 +183,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
     return <Badge className="bg-red-100 text-red-800 hover:bg-red-200">Expense</Badge>;
   };
   
-    // Prepare props for DateRangeSelector component
+  // Prepare props for DateRangeSelector component
   const dateRangeSelectorProps = {
     startDate,
     endDate,

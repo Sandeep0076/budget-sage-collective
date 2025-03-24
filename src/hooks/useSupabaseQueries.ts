@@ -94,7 +94,7 @@ export interface RecurringTransaction {
 export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
 
 // Transactions Hooks
-export const useTransactions = (options?: { limit?: number }) => {
+export const useTransactions = (options?: { limit?: number, startDate?: string, endDate?: string }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -106,6 +106,12 @@ export const useTransactions = (options?: { limit?: number }) => {
       .select('*, categories(*)')
       .eq('user_id', user.id)
       .order('transaction_date', { ascending: false });
+    
+    // Apply date range filter if provided
+    if (options?.startDate && options?.endDate) {
+      query = query.gte('transaction_date', options.startDate)
+               .lte('transaction_date', options.endDate);
+    }
     
     if (options?.limit) {
       query = query.limit(options.limit);
@@ -121,7 +127,25 @@ export const useTransactions = (options?: { limit?: number }) => {
     return data;
   };
 
-  const addTransaction = useMutation({
+  // Execute the query and return results directly
+  const result = useQuery({
+    queryKey: ['transactions', user?.id, options],
+    queryFn: fetchTransactions,
+    enabled: !!user,
+  });
+
+  return {
+    ...result,
+    refetch: result.refetch
+  };
+};
+
+// Used directly by components
+export const useCreateTransaction = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
     mutationFn: async (transactionData: Omit<Transaction, 'id' | 'user_id'>) => {
       if (!user) throw new Error('User must be logged in to add a transaction');
 
@@ -151,89 +175,6 @@ export const useTransactions = (options?: { limit?: number }) => {
       });
     },
   });
-
-  const updateTransaction = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Transaction>) => {
-      if (!user) throw new Error('User must be logged in to update a transaction');
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) {
-        console.error('Error updating transaction:', error);
-        throw error;
-      }
-
-      return data ? data[0] : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success('Transaction updated successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error updating transaction:', error);
-      toast.error('Failed to update transaction', {
-        description: error.message,
-      });
-    },
-  });
-
-  const deleteTransaction = useMutation({
-    mutationFn: async (id: string) => {
-      if (!user) throw new Error('User must be logged in to delete a transaction');
-
-      const { data, error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) {
-        console.error('Error deleting transaction:', error);
-        throw error;
-      }
-
-      return data ? data[0] : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      toast.success('Transaction deleted successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error deleting transaction:', error);
-      toast.error('Failed to delete transaction', {
-        description: error.message,
-      });
-    },
-  });
-
-  // Create a query function that can be used directly
-  const useTransactionsQuery = (params?: { limit?: number }) => 
-    useQuery({
-      queryKey: ['transactions', user?.id, params],
-      queryFn: fetchTransactions,
-      enabled: !!user,
-    });
-
-  return {
-    useTransactionsQuery,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    data: fetchTransactions,
-    isLoading: false
-  };
-};
-
-// Used directly by components
-export const useCreateTransaction = () => {
-  const { addTransaction } = useTransactions();
-  return addTransaction;
 };
 
 // Bills Hooks
@@ -258,26 +199,40 @@ export const useBills = () => {
     return data;
   };
 
-  const addBill = useMutation({
-    mutationFn: async (billData: Omit<Bill, 'id' | 'user_id'>) => {
-      if (!user) throw new Error('User must be logged in to add a bill');
+  // Execute the query and return results directly
+  const result = useQuery({
+    queryKey: ['bills', user?.id],
+    queryFn: fetchBills,
+    enabled: !!user,
+  });
 
-      // Map from billData to match the database schema
-      const dbBillData = {
-        name: billData.name,
-        amount: billData.amount,
-        due_date: billData.due_date,
-        recurring: billData.recurring,
-        frequency: billData.frequency,
-        status: billData.status || 'pending',
-        notes: billData.notes,
-        category_id: billData.category_id,
-        user_id: user.id,
-      };
+  return result;
+};
+
+// Used directly by components
+export const useCreateBill = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (billData: { 
+      name: string; 
+      amount: number; 
+      due_date: string; 
+      recurring: boolean; 
+      frequency?: string;
+      notes?: string;
+      category_id?: string;
+      status?: string;
+    }) => {
+      if (!user) throw new Error('User must be logged in to add a bill');
 
       const { data, error } = await supabase
         .from('bills')
-        .insert(dbBillData)
+        .insert({
+          ...billData,
+          user_id: user.id,
+        })
         .select();
 
       if (error) {
@@ -298,8 +253,13 @@ export const useBills = () => {
       });
     },
   });
+};
 
-  const updateBill = useMutation({
+export const useUpdateBill = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<Bill>) => {
       if (!user) throw new Error('User must be logged in to update a bill');
 
@@ -328,64 +288,6 @@ export const useBills = () => {
       });
     },
   });
-
-  const deleteBill = useMutation({
-    mutationFn: async (id: string) => {
-      if (!user) throw new Error('User must be logged in to delete a bill');
-
-      const { data, error } = await supabase
-        .from('bills')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) {
-        console.error('Error deleting bill:', error);
-        throw error;
-      }
-
-      return data ? data[0] : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bills'] });
-      toast.success('Bill deleted successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error deleting bill:', error);
-      toast.error('Failed to delete bill', {
-        description: error.message,
-      });
-    },
-  });
-
-  // Create a query function that can be used directly
-  const useBillsQuery = () => 
-    useQuery({
-      queryKey: ['bills', user?.id],
-      queryFn: fetchBills,
-      enabled: !!user,
-    });
-
-  return {
-    useBillsQuery,
-    addBill,
-    updateBill,
-    deleteBill,
-    data: fetchBills,
-    isLoading: false
-  };
-};
-
-// Used directly by components
-export const useCreateBill = () => {
-  const { addBill } = useBills();
-  return addBill;
-};
-
-export const useUpdateBill = () => {
-  const { updateBill } = useBills();
-  return updateBill;
 };
 
 // Budgets Hooks
@@ -415,115 +317,20 @@ export const useBudgets = (month?: number, year?: number) => {
     return data;
   };
 
-  const addBudget = useMutation({
-    mutationFn: async (budgetData: Omit<Budget, 'id' | 'user_id'>) => {
-      if (!user) throw new Error('User must be logged in to add a budget');
-
-      const { data, error } = await supabase
-        .from('budgets')
-        .insert({
-          ...budgetData,
-          user_id: user.id,
-        })
-        .select();
-
-      if (error) {
-        console.error('Error adding budget:', error);
-        throw error;
-      }
-
-      return data[0];
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      toast.success('Budget added successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error adding budget:', error);
-      toast.error('Failed to add budget', {
-        description: error.message,
-      });
-    },
+  // Execute the query and return results directly
+  const result = useQuery({
+    queryKey: ['budgets', user?.id, month, year],
+    queryFn: fetchBudgets,
+    enabled: !!user,
   });
 
-  const updateBudget = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Budget>) => {
-      if (!user) throw new Error('User must be logged in to update a budget');
-
-      const { data, error } = await supabase
-        .from('budgets')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) {
-        console.error('Error updating budget:', error);
-        throw error;
-      }
-
-      return data ? data[0] : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      toast.success('Budget updated successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error updating budget:', error);
-      toast.error('Failed to update budget', {
-        description: error.message,
-      });
-    },
-  });
-
-  const deleteBudget = useMutation({
-    mutationFn: async (id: string) => {
-      if (!user) throw new Error('User must be logged in to delete a budget');
-
-      const { data, error } = await supabase
-        .from('budgets')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) {
-        console.error('Error deleting budget:', error);
-        throw error;
-      }
-
-      return data ? data[0] : null;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      toast.success('Budget deleted successfully');
-    },
-    onError: (error: PostgrestError) => {
-      console.error('Error deleting budget:', error);
-      toast.error('Failed to delete budget', {
-        description: error.message,
-      });
-    },
-  });
-
-  // For components that need the data directly
-  return {
-    useBudgetsQuery: () => useQuery({
-      queryKey: ['budgets', user?.id, month, year],
-      queryFn: fetchBudgets,
-      enabled: !!user,
-    }),
-    addBudget,
-    updateBudget,
-    deleteBudget,
-    data: fetchBudgets,
-    isLoading: false
-  };
+  return result;
 };
 
 // Used directly by components
 export const useUpsertBudget = () => {
-  const { updateBudget, addBudget } = useBudgets();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   return useMutation({
     mutationFn: async (budgetData: { 
@@ -533,24 +340,49 @@ export const useUpsertBudget = () => {
       month: number;
       year: number;
     }) => {
+      if (!user) throw new Error('User must be logged in');
+
       if (budgetData.id) {
         // Update existing budget
-        return updateBudget.mutateAsync({
-          id: budgetData.id,
-          category_id: budgetData.category_id,
-          amount: budgetData.amount,
-          month: budgetData.month,
-          year: budgetData.year
-        });
+        const { data, error } = await supabase
+          .from('budgets')
+          .update({
+            category_id: budgetData.category_id,
+            amount: budgetData.amount,
+            month: budgetData.month,
+            year: budgetData.year
+          })
+          .eq('id', budgetData.id)
+          .eq('user_id', user.id)
+          .select();
+
+        if (error) throw error;
+        return data?.[0];
       } else {
         // Add new budget
-        return addBudget.mutateAsync({
-          category_id: budgetData.category_id,
-          amount: budgetData.amount,
-          month: budgetData.month,
-          year: budgetData.year
-        });
+        const { data, error } = await supabase
+          .from('budgets')
+          .insert({
+            category_id: budgetData.category_id,
+            amount: budgetData.amount,
+            month: budgetData.month,
+            year: budgetData.year,
+            user_id: user.id
+          })
+          .select();
+
+        if (error) throw error;
+        return data?.[0];
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success('Budget saved successfully');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to save budget', {
+        description: error.message,
+      });
     }
   });
 };
@@ -643,34 +475,23 @@ export const useUpdateProfile = () => {
 // AI Config Hooks
 export const useAIConfig = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
+  
   return useQuery({
     queryKey: ['ai_config', user?.id],
     queryFn: async () => {
       if (!user) return null;
 
       try {
-        // Attempt to use the RPC function to get the AI config
-        const { data, error } = await supabase.rpc('get_ai_config_for_user', {
-          user_id_param: user.id,
-        });
+        // Try direct query since RPC function seems to be missing
+        const { data, error } = await supabase
+          .from('ai_config')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
         if (error) {
-          console.error('Error fetching AI config with RPC:', error);
-          // Fallback to direct query
-          const { data: directData, error: directError } = await supabase
-            .from('ai_config')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (directError) {
-            console.error('Error in direct AI config query:', directError);
-            throw directError;
-          }
-
-          return directData;
+          console.error('Error in direct AI config query:', error);
+          throw error;
         }
 
         return data;
@@ -700,67 +521,33 @@ export const useSaveAIConfig = () => {
         let result;
 
         if (config.id) {
-          // Try to use RPC first
-          try {
-            const { data, error } = await supabase.rpc('update_ai_config', {
-              config_id: config.id,
-              new_provider: config.provider,
-              new_api_key: config.api_key,
-              new_model_name: config.model_name,
-            });
+          // Direct update since RPC function seems to be missing
+          const { data, error } = await supabase
+            .from('ai_config')
+            .update({
+              provider: config.provider,
+              api_key: config.api_key,
+              model_name: config.model_name,
+            })
+            .eq('id', config.id)
+            .select();
 
-            if (error) {
-              throw error;
-            }
-            
-            result = data;
-          } catch (rpcError) {
-            console.warn('RPC not available, falling back to direct update', rpcError);
-            // Fallback to direct update
-            const { data, error } = await supabase
-              .from('ai_config')
-              .update({
-                provider: config.provider,
-                api_key: config.api_key,
-                model_name: config.model_name,
-              })
-              .eq('id', config.id)
-              .select();
-
-            if (error) throw error;
-            result = data[0];
-          }
+          if (error) throw error;
+          result = data[0];
         } else {
-          // Try to use RPC first
-          try {
-            const { data, error } = await supabase.rpc('insert_ai_config', {
-              for_user_id: user.id,
-              new_provider: config.provider,
-              new_api_key: config.api_key,
-              new_model_name: config.model_name,
-            });
+          // Direct insert since RPC function seems to be missing
+          const { data, error } = await supabase
+            .from('ai_config')
+            .insert({
+              user_id: user.id,
+              provider: config.provider,
+              api_key: config.api_key,
+              model_name: config.model_name,
+            })
+            .select();
 
-            if (error) {
-              throw error;
-            }
-            
-            result = data;
-          } catch (rpcError) {
-            console.warn('RPC not available, falling back to direct insert', rpcError);
-            // Fallback to direct insert
-            const { data, error } = await supabase
-              .from('ai_config')
-              .insert({
-                user_id: user.id,
-                provider: config.provider,
-                api_key: config.api_key,
-                model_name: config.model_name,
-              })
-              .select();
-
-            if (error) throw error;
-            result = data[0];
-          }
+          if (error) throw error;
+          result = data[0];
         }
 
         return result;
@@ -773,7 +560,7 @@ export const useSaveAIConfig = () => {
       queryClient.invalidateQueries({ queryKey: ['ai_config'] });
       toast.success('AI configuration saved successfully');
     },
-    onError: (error: PostgrestError) => {
+    onError: (error: any) => {
       console.error('Error saving AI config:', error);
       toast.error('Failed to save AI configuration', {
         description: error.message,

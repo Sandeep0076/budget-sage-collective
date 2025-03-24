@@ -45,7 +45,7 @@ const Transactions = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-in p-6 h-full overflow-y-auto">
+      <div className="space-y-6 animate-fade-in p-6 h-full overflow-y-auto bg-gradient-to-b from-background to-background/80">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
             <strong className="font-bold">Error: </strong>
