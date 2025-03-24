@@ -15,7 +15,9 @@ import { useAI } from '@/context/AIProvider';
 import AIConfigPanel from './AIConfigPanel';
 import ReceiptDataEditor from './ReceiptDataEditor';
 import { useCreateTransaction } from '@/hooks/useSupabaseQueries';
+import { ReceiptData as AIReceiptData } from '@/services/ai/types';
 
+// Define a local ReceiptData interface that is compatible with our component needs
 export interface ReceiptData {
   description: string;
   amount: number;
@@ -23,6 +25,17 @@ export interface ReceiptData {
   category?: string;
   notes?: string;
 }
+
+// Helper function to convert between ReceiptData formats
+const convertAIReceiptDataToComponentData = (aiData: AIReceiptData): ReceiptData => {
+  return {
+    description: aiData.merchant || '',
+    amount: aiData.total || 0,
+    date: aiData.date || new Date().toISOString().split('T')[0],
+    category: aiData.category,
+    notes: aiData.items?.map(item => `${item.name}: ${item.price}`).join(', ')
+  };
+};
 
 const ReceiptScanner = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -147,15 +160,49 @@ const ReceiptScanner = () => {
         
         Format your response as JSON with these fields:
         {
-          "description": "string",
-          "amount": number,
+          "merchant": "string",
+          "total": number,
           "date": "string",
           "category": "string",
-          "notes": "string"
+          "items": [{"name": "string", "price": number}],
+          "taxAmount": number,
+          "tipAmount": number,
+          "paymentMethod": "string"
         }
       `;
       
-      // Use the generateContent method instead of generateText (which doesn't exist)
+      // Use the processReceiptImage method for better structured output
+      try {
+        // First try using the specialized receipt processor if available
+        const result = await service.processReceiptImage(image, { prompt });
+        
+        if (result.data) {
+          // Convert the AI receipt data to our component format
+          const receiptData = convertAIReceiptDataToComponentData(result.data);
+          setExtractedData(receiptData);
+        } else if (result.error) {
+          // Fall back to using generateContent if there's an error with processReceiptImage
+          console.log('Falling back to generateContent due to error:', result.error);
+          await useGenerateContentMethod(prompt);
+        }
+      } catch (err) {
+        console.log('processReceiptImage not implemented, falling back to generateContent');
+        await useGenerateContentMethod(prompt);
+      }
+    } catch (err) {
+      console.error('Error processing receipt:', err);
+      setError('Error processing receipt. Please try again. For Gemini users, make sure your API key has permission to use vision features (check https://ai.google.dev/gemini-api/docs/vision)');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  // Helper function to use the generateContent method
+  const useGenerateContentMethod = async (prompt: string) => {
+    if (!service || !image) return;
+    
+    try {
+      // Use the generateContent method
       const response = await service.generateContent(prompt, image);
       console.log('AI response:', response);
       
@@ -165,7 +212,18 @@ const ReceiptScanner = () => {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : response;
         
-        const parsedData = JSON.parse(jsonString);
+        // Try to parse as AI receipt data first
+        const parsedAIData = JSON.parse(jsonString) as Partial<AIReceiptData>;
+        
+        // If we have merchant and total, we can convert it
+        if (parsedAIData.merchant !== undefined && parsedAIData.total !== undefined) {
+          const componentData = convertAIReceiptDataToComponentData(parsedAIData as AIReceiptData);
+          setExtractedData(componentData);
+          return;
+        }
+        
+        // Try to parse as component receipt data
+        const parsedData = JSON.parse(jsonString) as Partial<ReceiptData>;
         
         // Validate the parsed data has the required fields
         if (!parsedData.description || parsedData.amount === undefined) {
@@ -177,17 +235,15 @@ const ReceiptScanner = () => {
           parsedData.date = new Date().toISOString().split('T')[0];
         }
         
-        setExtractedData(parsedData);
+        setExtractedData(parsedData as ReceiptData);
       } catch (err) {
         console.error('Error parsing JSON response:', err);
         toast.error('Could not parse the extracted data');
         setError('The AI service did not return valid data. Please try again or upload a clearer image.');
       }
     } catch (err) {
-      console.error('Error processing receipt:', err);
-      setError('Error processing receipt. Please try again.');
-    } finally {
-      setIsProcessing(false);
+      console.error('Error with generateContent:', err);
+      throw err; // Re-throw to be caught by the parent
     }
   };
   
@@ -333,6 +389,7 @@ const ReceiptScanner = () => {
       {/* Data Editor */}
       {extractedData && (
         <ReceiptDataEditor 
+          // Since our ReceiptDataEditor expects our component's ReceiptData type, this is fine
           receiptData={extractedData} 
           onSave={saveTransaction}
           onCancel={resetScanner}

@@ -1,3 +1,4 @@
+
 /**
  * AI Service Types
  * 
@@ -48,4 +49,7 @@ export interface AIService {
   
   setConfig(config: AIModelConfig): void;
   getAvailableModels(): string[];
+  
+  // Method for generating content with text and image input
+  generateContent(prompt: string, imageData: string | Blob): Promise<string>;
 }
