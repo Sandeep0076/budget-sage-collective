@@ -50,7 +50,7 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
   };
   
   return (
-    <Card className="w-full animate-fade-in">
+    <Card className="w-full animate-fade-in gradient-bg">
       <CardHeader>
         <CardTitle>Review Receipt Data</CardTitle>
         <CardDescription>
@@ -120,12 +120,12 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
               Receipt Items
             </Label>
             <Badge variant="outline" className="ml-2">
-              {data.items.length} items
+              {(data.items || []).length} items
             </Badge>
           </div>
           
           <Accordion type="single" collapsible className="w-full">
-            {data.items.map((item, index) => (
+            {(data.items || []).map((item, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex justify-between w-full pr-4">

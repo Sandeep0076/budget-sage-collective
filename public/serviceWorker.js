@@ -71,6 +71,11 @@ self.addEventListener('activate', event => {
 // Fetch event - network-first strategy for API requests, cache-first for static assets
 self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
+
+  // Skip requests for Chrome extension resources
+  if (requestUrl.protocol === 'chrome-extension:') {
+    return;
+  }
   
   // For API requests (including Supabase), use network-first strategy
   if (

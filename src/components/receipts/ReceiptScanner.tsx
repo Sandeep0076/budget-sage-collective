@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useAI } from '@/context/AIProvider';
 import AIConfigPanel from './AIConfigPanel';
 import ReceiptDataEditor from './ReceiptDataEditor';
-import { useCreateTransaction } from '@/hooks/useSupabaseQueries';
+import { useCreateTransaction, useCategories } from '@/hooks/useSupabaseQueries'; // Import useCategories
 import { ReceiptData, ReceiptItem } from '@/services/ai/types';
 
 const ReceiptScanner = () => {
@@ -30,6 +30,7 @@ const ReceiptScanner = () => {
   
   const { service, isConfigured } = useAI();
   const createTransaction = useCreateTransaction();
+  const { data: categories, isLoading: isLoadingCategories } = useCategories(); // Fetch categories
 
   // Function to start camera capture
   const startCamera = async () => {
@@ -129,43 +130,39 @@ const ReceiptScanner = () => {
     
     try {
       const categoryOptions = [
-        "Groceries", "Dining", "Entertainment", "Household", "Utilities", 
-        "Transportation", "Health", "Education", "Personal Care", "Shopping", 
-        "Travel", "Gifts", "Electronics", "Clothing", "Home Improvement", 
-        "General Merchandise", "Office Supplies"
+        "Food", "Entertainment", "Housing", "Utilities", "Insurance",
+        "Transportation", "Healthcare","Savings", "Personal","Clothing","Others"
       ];
       
       const prompt = `
-        Extract the following information from this receipt image:
-        1. Store/merchant name
-        2. Total amount (just the number)
-        3. Date of purchase (in YYYY-MM-DD format if possible)
-        4. Item details with individual names and prices
-        5. Tax amount if present
+        Analyze this receipt image thoroughly. Extract the following details:
 
-        For each individual item in the receipt, please provide:
-        - Item name (translated to English if in another language)
-        - Item price (as a number)
-        - Item quantity if available
+        1. Individual Items: A list of all items purchased. For EACH item, provide:
+           - Description: The name of the item (translate to English if necessary).
+           - Amount: The price of the single item or the total price for the quantity of that item (numeric value only).
+           - category: Assign ONE category from the following list that best fits the item: ${categoryOptions.join(', ')}. Be specific for each item.
+        2. Date: The date of the transaction. Use YYYY-MM-DD format if possible. If the date is not visible or cannot be determined from the image, use today's date (YYYY-MM-DD).
+        3. Type: By default, assume the transaction is an Expense.
 
-        Please categorize each item into ONE of these categories ONLY:
-        ${categoryOptions.join(', ')}
+        Format the entire response STRICTLY as a JSON array with the following structure. Do not include any text outside of this JSON array:
 
-        If any text is in German, please translate it to English first.
-        
-        Format your response as JSON with these fields:
-        {
-          "merchant": "string",
-          "total": number,
-          "date": "string",
-          "category": "string",
-          "items": [
-            {"name": "string", "price": number, "quantity": number, "category": "string"}
-          ],
-          "taxAmount": number,
-          "tipAmount": number,
-          "paymentMethod": "string"
-        }
+        Example:
+        [
+          {
+            "description": "Pillow",
+            "category": "Housing",
+            "date": "2025-03-27",
+            "amount": -20.00,
+            "type": "Expense"
+          },
+          {
+            "description": "Pizza",
+            "category": "Food",
+            "date": "2025-03-21",
+            "amount": -10,
+             "type": "Expense"
+          }
+        ]
       `;
       
       // Use the processReceiptImage method for better structured output
@@ -192,9 +189,13 @@ const ReceiptScanner = () => {
         console.log('processReceiptImage not implemented, falling back to generateContent');
         await useGenerateContentMethod(prompt);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error processing receipt:', err);
-      setError('Error processing receipt. Please try again. For Gemini users, make sure your API key has permission to use vision features (check https://ai.google.dev/gemini-api/docs/vision)');
+      if (err.message.includes('Gemini API error')) {
+        setError('Error processing receipt: Gemini API is currently experiencing issues. Please try again later.');
+      } else {
+        setError('Error processing receipt. Please try again or upload a clearer image.');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -207,43 +208,33 @@ const ReceiptScanner = () => {
     try {
       // Use the generateContent method
       const response = await service.generateContent(prompt, image);
-      console.log('AI response:', response);
+      console.log('AI raw response:', response);
       
-      // Try to parse the response as JSON
-      try {
-        // Extract JSON from the response if it contains other text
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : response;
-        
-        // Parse the JSON
-        const parsedData = JSON.parse(jsonString);
-        
-        // Validate the parsed data has the required fields
-        if (!parsedData.merchant || parsedData.total === undefined || !Array.isArray(parsedData.items)) {
-          throw new Error('Missing required fields in the extracted data');
-        }
-        
-        // Set default date to today if not extracted
-        if (!parsedData.date) {
-          parsedData.date = new Date().toISOString().split('T')[0];
-        }
-        
-        // Add category to items if missing
-        const dataWithItemCategories = {
-          ...parsedData,
-          items: parsedData.items.map((item: ReceiptItem) => ({
-            ...item,
-            category: item.category || parsedData.category || 'General Merchandise'
-          }))
-        };
-        
-        setExtractedData(dataWithItemCategories);
+        // Try to parse the response as JSON
+        try {
+          // Remove markdown code fences if present
+          const jsonString = response.replace(/^```json\n/, '').replace(/```$/, '');
+          const parsedData = JSON.parse(jsonString);
+
+          // Set default date to today if not extracted
+          // Add default values to ensure data integrity
+
+          const dataWithDefaults = parsedData.map(item => ({
+            description: item.description || 'Unknown Item',
+            category: item.category || 'General Merchandise',
+            date: item.date || new Date().toISOString().split('T')[0],
+            amount: item.amount || 0,
+            type: item.type || "Expense"
+          }));
+          setExtractedData(dataWithDefaults);
+
       } catch (err) {
         console.error('Error parsing JSON response:', err);
         toast.error('Could not parse the extracted data');
         setError('The AI service did not return valid data. Please try again or upload a clearer image.');
       }
-    } catch (err) {
+    }
+     catch (err) {
       console.error('Error with generateContent:', err);
       throw err; // Re-throw to be caught by the parent
     }
@@ -259,18 +250,41 @@ const ReceiptScanner = () => {
   
   // Function to save transaction data
   const saveTransaction = (data: ReceiptData) => {
+    if (isLoadingCategories || !categories) {
+      toast.error("Categories still loading. Please wait and try again.");
+      return;
+    }
+
+    // Create a map for quick category lookup by name (case-insensitive)
+    const categoryMap = new Map(categories.map(cat => [cat.name.toLowerCase(), cat.id]));
+    const defaultCategoryName = 'General Merchandise';
+    const defaultCategoryId = categoryMap.get(defaultCategoryName.toLowerCase());
+
+    if (!defaultCategoryId) {
+      console.error("Default category 'General Merchandise' not found in database.");
+      toast.error("Configuration error: Default category missing.");
+      return;
+    }
+
     // Save each receipt item as an individual transaction
     const promises = data.items.map(item => {
+      const itemCategoryName = item.category || data.category || defaultCategoryName;
+      const categoryId = categoryMap.get(itemCategoryName.toLowerCase()) || defaultCategoryId;
+
+      if (!categoryMap.has(itemCategoryName.toLowerCase())) {
+        console.warn(`Category "${itemCategoryName}" not found. Using default.`);
+      }
+
       return createTransaction.mutate({
-        description: `${item.name} (${data.merchant})`,
+        description: `${item.name} (${data.merchant || 'Unknown Merchant'})`,
         amount: item.price,
-        transaction_date: data.date,
+        transaction_date: data.date || new Date().toISOString().split('T')[0], // Ensure date is present
         transaction_type: 'expense',
-        notes: `Part of receipt from ${data.merchant}. Total receipt amount: ${data.total}`,
-        category: item.category || data.category || 'General Merchandise',
+        notes: `Part of receipt from ${data.merchant || 'Unknown Merchant'}. Total: ${data.total}`,
+        category_id: categoryId, // Use category_id
       });
     });
-    
+
     // Wait for all transactions to be created
     Promise.all(promises)
       .then(() => {

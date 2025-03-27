@@ -492,19 +492,21 @@ export const useAIConfig = () => {
       if (!user) return null;
 
       try {
-        // Try direct query since RPC function seems to be missing
+        // Get all configurations for the user and sort by created_at to get the most recent
         const { data, error } = await supabase
           .from('ai_config')
           .select('*')
           .eq('user_id', user.id)
-          .maybeSingle();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
         if (error) {
           console.error('Error in direct AI config query:', error);
           throw error;
         }
 
-        return data;
+        // Return the most recent config or null if none exists
+        return data && data.length > 0 ? data[0] : null;
       } catch (error) {
         console.error('Error in useAIConfig:', error);
         throw error;
