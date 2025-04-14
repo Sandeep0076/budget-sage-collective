@@ -501,18 +501,29 @@ export const useAIConfig = () => {
           .limit(1);
 
         if (error) {
+          // Handle specific error cases
+          if (error.code === '42P01') { // Table doesn't exist
+            console.warn('AI config table does not exist yet. This is normal for new installations.');
+            return null;
+          }
           console.error('Error in direct AI config query:', error);
-          throw error;
+          // Don't throw, just return null to avoid breaking the app
+          return null;
         }
 
         // Return the most recent config or null if none exists
         return data && data.length > 0 ? data[0] : null;
       } catch (error) {
         console.error('Error in useAIConfig:', error);
-        throw error;
+        // Return null instead of throwing to avoid breaking the app
+        return null;
       }
     },
     enabled: !!user,
+    // Add retry logic for transient errors
+    retry: 1,
+    // Don't refetch too aggressively
+    staleTime: 60 * 1000, // 1 minute
   });
 };
 

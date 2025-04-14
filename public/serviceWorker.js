@@ -82,22 +82,33 @@ self.addEventListener('fetch', event => {
     requestUrl.pathname.startsWith('/api') ||
     requestUrl.hostname.includes('supabase')
   ) {
+    // For API requests, use a network-first strategy
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Clone the response for caching
-          const clonedResponse = response.clone();
-          
-          // Open the data cache and store the response
-          caches.open(DATA_CACHE).then(cache => {
-            cache.put(event.request, clonedResponse);
-          });
+          // Only cache GET requests
+          if (event.request.method === 'GET') {
+            // Clone the response for caching
+            const clonedResponse = response.clone();
+            
+            // Open the data cache and store the response
+            caches.open(DATA_CACHE).then(cache => {
+              cache.put(event.request, clonedResponse);
+            });
+          }
           
           return response;
         })
         .catch(() => {
-          // If network fails, try to get from cache
-          return caches.match(event.request);
+          // If network fails, try to get from cache (only for GET requests)
+          if (event.request.method === 'GET') {
+            return caches.match(event.request);
+          }
+          // For non-GET requests, return a proper error response
+          return new Response(JSON.stringify({ error: 'Network error' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
         })
     );
     return;

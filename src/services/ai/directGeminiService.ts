@@ -111,19 +111,88 @@ export class DirectGeminiService extends BaseAIService implements AIService {
       
       // Try to extract JSON from the response
       try {
-        // Search for JSON object in the text (might be wrapped in ```json ... ```)
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('No JSON object found in the response');
+        // First check if the response is wrapped in markdown code blocks
+        let jsonString = text;
+        
+        // Remove markdown code fences if present
+        if (text.includes('```json')) {
+          // More robust regex to handle the code blocks
+          jsonString = text.replace(/```json\s*\n/g, '').replace(/\n```\s*$/g, '');
+          
+          // If the above didn't work, try a more aggressive approach
+          if (jsonString.includes('```')) {
+            // Extract everything between the first and last backtick groups
+            const match = text.match(/```json\s*\n([\s\S]*?)\n```/);
+            if (match && match[1]) {
+              jsonString = match[1];
+            } else {
+              // If still not working, just remove all backticks
+              jsonString = text.replace(/```json/g, '').replace(/```/g, '');
+            }
+          }
         }
         
-        // Parse the JSON
-        const jsonData: ReceiptData = JSON.parse(jsonMatch[0]);
-        return {
-          data: jsonData,
-          error: null,
-          raw: data
-        };
+        // Try to parse the JSON - could be an object or an array
+        const parsedData = JSON.parse(jsonString.trim());
+        
+        // Check if we got an array (common from Gemini) or a properly structured object
+        if (Array.isArray(parsedData)) {
+          // We got an array of items, need to transform to ReceiptData structure
+          const today = new Date().toISOString().split('T')[0];
+          
+          // Transform the items into the expected ReceiptItem format
+          const receiptItems = parsedData.map(item => ({
+            name: item.description || 'Unknown Item',
+            price: Math.abs(item.amount) || 0,
+            quantity: 1,
+            category: item.category || 'General Merchandise'
+          }));
+          
+          // Calculate total from all items
+          const total = receiptItems.reduce((sum, item) => sum + item.price, 0);
+          
+          // Create properly structured ReceiptData object
+          const receiptData: ReceiptData = {
+            merchant: 'Receipt Scan',
+            date: parsedData[0]?.date || today,
+            total: total,
+            items: receiptItems,
+            category: 'General Merchandise'
+          };
+          
+          return {
+            data: receiptData,
+            error: null,
+            raw: data
+          };
+        } else if (parsedData.items) {
+          // Already in the expected format
+          return {
+            data: parsedData as ReceiptData,
+            error: null,
+            raw: data
+          };
+        } else {
+          // Try to adapt a single item to the expected format
+          const receiptData: ReceiptData = {
+            merchant: parsedData.merchant || 'Receipt Scan',
+            date: parsedData.date || new Date().toISOString().split('T')[0],
+            total: parsedData.amount ? Math.abs(parsedData.amount) : 0,
+            items: [{
+              name: parsedData.description || 'Unknown Item',
+              price: parsedData.amount ? Math.abs(parsedData.amount) : 0,
+              quantity: 1,
+              category: parsedData.category || 'General Merchandise'
+            }],
+            category: parsedData.category || 'General Merchandise'
+          };
+          
+          return {
+            data: receiptData,
+            error: null,
+            raw: data
+          };
+        }
       } catch (parseError) {
         console.error('Error parsing JSON from response:', parseError);
         return {

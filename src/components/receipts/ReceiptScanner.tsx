@@ -208,26 +208,65 @@ const ReceiptScanner = () => {
     try {
       // Use the generateContent method
       const response = await service.generateContent(prompt, image);
-      console.log('AI raw response:', response);
+      console.log('AI response:', response);
       
-        // Try to parse the response as JSON
-        try {
-          // Remove markdown code fences if present
-          const jsonString = response.replace(/^```json\n/, '').replace(/```$/, '');
-          const parsedData = JSON.parse(jsonString);
+      // Try to parse the response as JSON
+      try {
+        // Remove markdown code fences if present
+        let jsonString = response;
+        
+        // Handle markdown code blocks
+        if (response.includes('```json')) {
+          // More robust regex to handle the code blocks
+          jsonString = response.replace(/```json\s*\n/g, '').replace(/\n```\s*$/g, '');
+          
+          // If the above didn't work, try a more aggressive approach
+          if (jsonString.includes('```')) {
+            // Extract everything between the first and last backtick groups
+            const match = response.match(/```json\s*\n([\s\S]*?)\n```/);
+            if (match && match[1]) {
+              jsonString = match[1];
+            } else {
+              // If still not working, just remove all backticks
+              jsonString = response.replace(/```json/g, '').replace(/```/g, '');
+            }
+          }
+        }
+        
+        // Trim any extra whitespace
+        jsonString = jsonString.trim();
+        
+        // Parse the JSON
+        const parsedData = JSON.parse(jsonString);
+        
+        // Check if it's an array or single object
+        const itemsArray = Array.isArray(parsedData) ? parsedData : [parsedData];
 
-          // Set default date to today if not extracted
-          // Add default values to ensure data integrity
-
-          const dataWithDefaults = parsedData.map(item => ({
-            description: item.description || 'Unknown Item',
-            category: item.category || 'General Merchandise',
-            date: item.date || new Date().toISOString().split('T')[0],
-            amount: item.amount || 0,
-            type: item.type || "Expense"
-          }));
-          setExtractedData(dataWithDefaults);
-
+        // Set default date to today if not extracted
+        // Add default values to ensure data integrity
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Transform the items into the expected ReceiptItem format
+        const receiptItems = itemsArray.map(item => ({
+          name: item.description || 'Unknown Item',
+          price: Math.abs(item.amount) || 0,
+          quantity: 1,
+          category: item.category || 'General Merchandise'
+        }));
+        
+        // Calculate total from all items
+        const total = receiptItems.reduce((sum, item) => sum + item.price, 0);
+        
+        // Create properly structured ReceiptData object
+        const receiptData: ReceiptData = {
+          merchant: 'Receipt Scan',
+          date: itemsArray[0]?.date || today,
+          total: total,
+          items: receiptItems,
+          category: 'General Merchandise'
+        };
+        
+        setExtractedData(receiptData);
       } catch (err) {
         console.error('Error parsing JSON response:', err);
         toast.error('Could not parse the extracted data');
