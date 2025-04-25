@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, MoreVertical, Trash2, Search, Filter, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Edit, MoreVertical, Trash2, Search, Filter, Plus, Calendar as CalendarIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTransactions } from '@/hooks/useSupabaseQueries';
 import { useProfile } from '@/hooks/useSupabaseQueries';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,10 +114,17 @@ interface TransactionListProps {
   onAddNew?: () => void;
 }
 
+type SortField = 'description' | 'category' | 'date' | 'amount' | 'type' | null;
+type SortDirection = 'asc' | 'desc';
+
 const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: profile } = useProfile();
   const queryClient = useQueryClient();
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Get current month date range
   const today = new Date();
@@ -142,7 +149,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   // Get user's currency preference
   const userCurrency = profile?.currency || 'EUR';
   
-  // Filter transactions based on search term and date range
+  // Sort and filter transactions
   // Apply date range changes and refetch data
   const handleApplyDateRange = () => {
     setShowDateFilter(false);
@@ -151,6 +158,28 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
       title: 'Date range updated',
       description: `Showing transactions from ${format(startDate, 'MMM dd, yyyy')} to ${format(endDate, 'MMM dd, yyyy')}`
     });
+  };
+
+  // Handle column sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle direction if already sorting by this field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field and default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Get sort icon for column header
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="ml-2 h-4 w-4" /> 
+      : <ArrowDown className="ml-2 h-4 w-4" />;
   };
 
   const filteredTransactions = useMemo(() => {
@@ -164,7 +193,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
       return [];
     }
     
-    return transactions.filter((transaction) => {
+    // First filter transactions
+    let filtered = transactions.filter((transaction) => {
       if (!transaction) {
         return false;
       }
@@ -176,7 +206,51 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
       // Transactions are already filtered by date from the API call
       return matchesSearch;
     });
-  }, [transactions, searchTerm]);
+
+    // Then sort if a sort field is selected
+    if (sortField) {
+      filtered = [...filtered].sort((a, b) => {
+        let valueA, valueB;
+        
+        // Extract values based on sort field
+        switch(sortField) {
+          case 'description':
+            valueA = a.description?.toLowerCase() || '';
+            valueB = b.description?.toLowerCase() || '';
+            break;
+          case 'category':
+            valueA = a.categories?.name?.toLowerCase() || 'zzz'; // Put uncategorized at the end
+            valueB = b.categories?.name?.toLowerCase() || 'zzz';
+            break;
+          case 'date':
+            valueA = new Date(a.transaction_date).getTime();
+            valueB = new Date(b.transaction_date).getTime();
+            break;
+          case 'amount':
+            valueA = Math.abs(a.amount);
+            valueB = Math.abs(b.amount);
+            break;
+          case 'type':
+            valueA = a.transaction_type || '';
+            valueB = b.transaction_type || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        // Compare values based on sort direction
+        if (valueA < valueB) {
+          return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+          return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    return filtered;
+  }, [transactions, searchTerm, sortField, sortDirection]);
   
   // Function to delete a transaction
   const handleDelete = async (id: string) => {
@@ -355,11 +429,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead className="cursor-pointer hover:bg-secondary/50" onClick={() => handleSort('description')}>
+                  <div className="flex items-center">
+                    Description
+                    {getSortIcon('description')}
+                  </div>
+                </TableHead>
+                <TableHead className="cursor-pointer hover:bg-secondary/50" onClick={() => handleSort('category')}>
+                  <div className="flex items-center">
+                    Category
+                    {getSortIcon('category')}
+                  </div>
+                </TableHead>
+                <TableHead className="cursor-pointer hover:bg-secondary/50" onClick={() => handleSort('date')}>
+                  <div className="flex items-center">
+                    Date
+                    {getSortIcon('date')}
+                  </div>
+                </TableHead>
+                <TableHead className="cursor-pointer hover:bg-secondary/50" onClick={() => handleSort('amount')}>
+                  <div className="flex items-center">
+                    Amount
+                    {getSortIcon('amount')}
+                  </div>
+                </TableHead>
+                <TableHead className="cursor-pointer hover:bg-secondary/50" onClick={() => handleSort('type')}>
+                  <div className="flex items-center">
+                    Type
+                    {getSortIcon('type')}
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
