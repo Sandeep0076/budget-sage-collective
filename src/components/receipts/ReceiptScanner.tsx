@@ -129,18 +129,22 @@ const ReceiptScanner = () => {
     setError(null);
     
     try {
-      const categoryOptions = [
-        "Food", "Entertainment", "Housing", "Utilities", "Insurance",
-        "Transportation", "Healthcare","Savings", "Personal","Clothing","Others"
-      ];
+      // Use the actual categories from the database for more accurate classification
+      const categoryOptions = isLoadingCategories || !categories 
+        ? ["Food", "Entertainment", "Housing", "Utilities", "Insurance", "Transportation", "Healthcare", "Savings", "Personal", "Clothing", "Others"]
+        : categories.map(cat => cat.name);
       
       const prompt = `
         Analyze this receipt image thoroughly. Extract the following details:
 
         1. Individual Items: A list of all items purchased. For EACH item, provide:
-           - Description: The name of the item (translate to English if necessary).
+           - Description: The name of the item. IMPORTANT: ALWAYS TRANSLATE ALL ITEM NAMES TO ENGLISH, even if they appear to be in another language. For example, translate "Milchschokostr" to "Milk Chocolate" or "Trinkhalme" to "Drinking Straws".
            - Amount: The price of the single item or the total price for the quantity of that item (numeric value only).
-           - category: Assign ONE category from the following list that best fits the item: ${categoryOptions.join(', ')}. Be specific for each item.
+           - Category: ALWAYS assign ONE specific category from the following list that best fits the item: ${categoryOptions.join(', ')}. Be specific and analyze each item individually. For example:
+              * Food items like groceries, snacks, drinks → "Food"
+              * Household supplies, furniture, decorative items → "Housing"
+              * Clothes, shoes, accessories → "Clothing"
+              * Entertainment items, toys, games → "Entertainment"
         2. Date: The date of the transaction. Use YYYY-MM-DD format if possible. If the date is not visible or cannot be determined from the image, use today's date (YYYY-MM-DD).
         3. Type: By default, assume the transaction is an Expense.
 
@@ -289,25 +293,41 @@ const ReceiptScanner = () => {
   
   // Function to save transaction data
   const saveTransaction = (data: ReceiptData) => {
-    if (isLoadingCategories || !categories) {
-      toast.error("Categories still loading. Please wait and try again.");
+    if (isLoadingCategories || !categories || categories.length === 0) {
+      toast.error("Categories still loading or no categories available. Please wait and try again.");
       return;
     }
 
     // Create a map for quick category lookup by name (case-insensitive)
     const categoryMap = new Map(categories.map(cat => [cat.name.toLowerCase(), cat.id]));
-    const defaultCategoryName = 'General Merchandise';
-    const defaultCategoryId = categoryMap.get(defaultCategoryName.toLowerCase());
-
+    
+    // Try to find either 'General Merchandise', 'Other', or just use the first category as a fallback
+    let defaultCategoryId: string | undefined;
+    
+    // Try common default category names
+    const possibleDefaults = ['general merchandise', 'general', 'others', 'other', 'miscellaneous'];
+    
+    for (const defaultName of possibleDefaults) {
+      if (categoryMap.has(defaultName)) {
+        defaultCategoryId = categoryMap.get(defaultName);
+        break;
+      }
+    }
+    
+    // If no default category found, use the first category as a fallback
+    if (!defaultCategoryId && categories.length > 0) {
+      defaultCategoryId = categories[0].id;
+      console.log(`Using '${categories[0].name}' as the default category.`);
+    }
+    
     if (!defaultCategoryId) {
-      console.error("Default category 'General Merchandise' not found in database.");
-      toast.error("Configuration error: Default category missing.");
+      toast.error("No categories available. Please create at least one category first.");
       return;
     }
 
     // Save each receipt item as an individual transaction
     const promises = data.items.map(item => {
-      const itemCategoryName = item.category || data.category || defaultCategoryName;
+      const itemCategoryName = item.category || data.category || '';
       const categoryId = categoryMap.get(itemCategoryName.toLowerCase()) || defaultCategoryId;
 
       if (!categoryMap.has(itemCategoryName.toLowerCase())) {

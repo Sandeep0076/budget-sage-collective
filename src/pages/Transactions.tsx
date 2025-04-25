@@ -46,7 +46,7 @@ const Transactions = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-in p-6 h-full overflow-y-auto bg-gradient-to-b from-background to-background/80">
+      <div className="space-y-6 animate-fade-in p-6 overflow-visible bg-gradient-to-b from-background to-background/80">
         {error && (
           <Alert variant="destructive">
             <AlertTitle>Error</AlertTitle>

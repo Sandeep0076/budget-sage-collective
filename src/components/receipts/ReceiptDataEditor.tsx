@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { ReceiptData, ReceiptItem } from '@/services/ai/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { useCategories } from '@/hooks/useSupabaseQueries';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ReceiptDataEditorProps {
   receiptData: ReceiptData;
@@ -22,6 +24,7 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
   onCancel
 }) => {
   const [data, setData] = useState<ReceiptData>(receiptData);
+  const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
   
   const formatDate = (dateStr: string | null | undefined): string => {
     if (!dateStr) return '';
@@ -101,20 +104,31 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <div className="relative">
-              <Tag className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="category"
-                value={data.category || ''}
-                onChange={(e) => setData({ ...data, category: e.target.value })}
-                className="pl-8"
-                placeholder="e.g. Groceries, Dining"
-              />
+              <Select 
+                value={data.category || ''} 
+                onValueChange={(value) => setData({ ...data, category: value })}
+                disabled={isLoadingCategories}
+              >
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center">
+                    <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder="Select a category" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <Label className="text-base font-medium flex items-center">
               <ShoppingCart className="mr-2 h-4 w-4" />
               Receipt Items
@@ -124,13 +138,20 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
             </Badge>
           </div>
           
+          <div className="grid grid-cols-3 w-full pr-4 pb-2 border-b mb-2 text-sm text-muted-foreground">
+            <span>Item Name</span>
+            <span className="text-center">Category</span>
+            <span className="text-right">Price</span>
+          </div>
+          
           <Accordion type="single" collapsible className="w-full">
             {(data.items || []).map((item, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
                 <AccordionTrigger className="hover:no-underline">
-                  <div className="flex justify-between w-full pr-4">
+                  <div className="grid grid-cols-3 w-full items-center pr-4">
                     <span className="font-medium">{item.name}</span>
-                    <span className="font-mono">{item.price.toFixed(2)}</span>
+                    <span className="font-medium text-center">{item.category || 'General'}</span>
+                    <span className="font-mono text-right">{item.price.toFixed(2)}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -165,12 +186,22 @@ const ReceiptDataEditor: React.FC<ReceiptDataEditorProps> = ({
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`item-category-${index}`}>Category</Label>
-                      <Input
-                        id={`item-category-${index}`}
+                      <Select
                         value={item.category || data.category || ''}
-                        onChange={(e) => updateItemField(index, 'category', e.target.value)}
-                        placeholder="e.g. Groceries, Household"
-                      />
+                        onValueChange={(value) => updateItemField(index, 'category', value)}
+                        disabled={isLoadingCategories}
+                      >
+                        <SelectTrigger id={`item-category-${index}`}>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </AccordionContent>

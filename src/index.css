@@ -264,16 +264,16 @@ html, body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-secondary rounded-full;
+  @apply bg-transparent rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/40 transition-colors;
+  @apply bg-white/15 rounded-full hover:bg-white/20 transition-colors;
 }
 
 /* Loader and animations */

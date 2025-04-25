@@ -65,31 +65,41 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             {format(startDate, 'PPP')} - {format(endDate, 'PPP')}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex space-x-2 p-3">
+        <PopoverContent 
+          className="w-auto p-4 bg-popover text-popover-foreground border border-border shadow-md" 
+          align="start"
+          sideOffset={4}
+        >
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="space-y-2">
-              <div className="font-medium">Start Date</div>
-              <Calendar
-                mode="single"
-                selected={startDate}
-                onSelect={(date) => date && setStartDate(date)}
-                disabled={(date) => date > endDate || date > new Date()}
-              />
+              <div className="font-medium text-foreground text-sm">Start Date</div>
+              <div className="border border-border rounded-md overflow-hidden">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={(date) => date && setStartDate(date)}
+                  disabled={(date) => date > endDate || date > new Date()}
+                  className="bg-background text-foreground"
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <div className="font-medium">End Date</div>
-              <Calendar
-                mode="single"
-                selected={endDate}
-                onSelect={(date) => date && setEndDate(date)}
-                disabled={(date) => date < startDate || date > new Date()}
-              />
+              <div className="font-medium text-foreground text-sm">End Date</div>
+              <div className="border border-border rounded-md overflow-hidden">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={(date) => date && setEndDate(date)}
+                  disabled={(date) => date < startDate || date > new Date()}
+                  className="bg-background text-foreground"
+                />
+              </div>
             </div>
           </div>
-          <div className="flex justify-end p-3 border-t">
+          <div className="flex justify-end mt-4 pt-3 border-t border-border">
             <Button 
-              size="sm" 
               onClick={() => setShowDateFilter(false)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Apply Range
             </Button>

@@ -17,6 +17,29 @@ import { formatCurrency } from '@/utils/formatters';
 import { useYearlyFinancials, useMonthlySpending } from '@/hooks/useSupabaseQueries';
 
 const Dashboard: React.FC = () => {
+  // --- Minimal DB connectivity test (remove after testing) ---
+  useEffect(() => {
+    const testDbConnection = async () => {
+      try {
+        // Import supabase client dynamically to keep this change minimal
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .limit(1);
+        if (error) {
+          console.error('Supabase DB connection test error:', error);
+        } else {
+          console.log('Supabase DB connection test result:', data);
+        }
+      } catch (err) {
+        console.error('Supabase DB connection test unexpected error:', err);
+      }
+    };
+    testDbConnection();
+  }, []);
+  // --- End minimal DB connectivity test ---
+
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AuthState {
@@ -11,7 +11,13 @@ export interface AuthState {
   logout: () => Promise<void>;
 }
 
-export const useAuth = () => {
+/**
+ * Authentication hook for managing user sessions with Supabase
+ * 
+ * This hook provides authentication state and functions for the application.
+ * It handles session management, login state, and logout functionality.
+ */
+export const useAuth = (): AuthState => {
   // Define logout function outside state to avoid circular reference
   const logoutFn = async () => {
     try {

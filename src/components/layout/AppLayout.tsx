@@ -88,7 +88,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-background to-background/80">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-background to-background/80">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex w-64 flex-col fixed inset-y-0">
         <div className="flex-1 flex flex-col min-h-0 border-r border-white/10 bg-background/50 backdrop-blur-md">
@@ -207,15 +207,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col flex-1 md:pl-64">
-        <main className="flex-1">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              {/* Mobile spacing for fixed header */}
-              <div className="md:hidden h-16" />
-              {children}
-            </div>
-          </div>
+      <div className="flex-1 md:pl-64 w-full overflow-hidden">
+        {/* Mobile spacing for fixed header */}
+        <div className="md:hidden h-16" />
+        <main className="h-[calc(100vh-16px)] overflow-y-auto max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6">
+          {children}
         </main>
       </div>
     </div>

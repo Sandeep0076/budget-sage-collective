@@ -154,6 +154,21 @@ const TransactionForm: React.FC<TransactionFormProps> = ({
       }
     } catch (error: any) {
       console.error('Error creating transaction:', error);
+      
+      // Enhanced error logging for debugging
+      if (error.code) {
+        console.error('Database error code:', error.code);
+      }
+      if (error.details) {
+        console.error('Error details:', error.details);
+      }
+      if (error.hint) {
+        console.error('Error hint:', error.hint);
+      }
+      
+      // Log the exact payload that was being sent
+      console.log('Transaction data that failed:', transactionData);
+      
       setFormError(error.message || 'There was an error creating your transaction');
       toast({
         title: "Transaction failed",
