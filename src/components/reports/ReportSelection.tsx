@@ -8,7 +8,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import CustomCard, { CardContent, CardHeader, CardTitle } from '@/components/ui/CustomCard';
 import { BarChart2, PieChart, TrendingUp, Calendar, Clock } from 'lucide-react';
 
 // Define report types with their details
@@ -65,15 +65,18 @@ const ReportSelection: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {reportTypes.map((report) => (
-          <Card 
+          <CustomCard 
             key={report.id} 
-            className={`overflow-hidden transition-all hover:shadow-md bg-white ${report.comingSoon ? 'opacity-70' : 'cursor-pointer'}`}
+            hover={!report.comingSoon}
+            className={`${report.comingSoon ? 'opacity-70' : 'cursor-pointer'}`}
             onClick={() => handleReportSelect(report.path, report.comingSoon)}
           >
-            <CardHeader className="flex flex-row items-start gap-4 pb-2 bg-white border-b">
-              {report.icon}
+            <CardHeader className="flex flex-row items-start gap-4 pb-2 border-b border-white/20">
+              <div className="w-10 h-10 rounded-full bg-primary/30 flex items-center justify-center">
+                {report.icon}
+              </div>
               <div>
-                <CardTitle className="text-xl text-black font-bold">{report.title}</CardTitle>
+                <CardTitle>{report.title}</CardTitle>
                 {report.comingSoon && (
                   <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1">
                     Coming Soon
@@ -82,26 +85,26 @@ const ReportSelection: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-black font-medium mt-2">
+              <p className="text-sm text-white/80 mt-2">
                 {report.description}
               </p>
+              <div className="mt-4">
+                <Button 
+                  variant={report.comingSoon ? "outline" : "default"} 
+                  className="w-full"
+                  disabled={report.comingSoon}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!report.comingSoon) {
+                      navigate(report.path);
+                    }
+                  }}
+                >
+                  {report.comingSoon ? 'Coming Soon' : 'Generate Report'}
+                </Button>
+              </div>
             </CardContent>
-            <CardFooter>
-              <Button 
-                variant={report.comingSoon ? "outline" : "default"} 
-                className="w-full"
-                disabled={report.comingSoon}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!report.comingSoon) {
-                    navigate(report.path);
-                  }
-                }}
-              >
-                {report.comingSoon ? 'Coming Soon' : 'Generate Report'}
-              </Button>
-            </CardFooter>
-          </Card>
+          </CustomCard>
         ))}
       </div>
     </div>
