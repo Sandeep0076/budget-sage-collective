@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import CustomCard, { CardContent, CardHeader, CardTitle } from '@/components/ui/CustomCard';
 import { useTransactions } from '@/hooks/useSupabaseQueries';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -140,46 +140,50 @@ This report was automatically generated based on your transaction data.
   };
   
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/reports')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Reports
-          </Button>
+    <div className="space-y-6 animate-fade-in text-white">
+      <div className="relative rounded-xl overflow-hidden bg-background/30 text-white glass-effect shadow-subtle border border-white/30 p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-white hover:text-white hover:bg-white/10"
+              onClick={() => navigate('/reports')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Reports
+            </Button>
+          </div>
+          
+          {reportText && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-white border-white/30 hover:bg-white/10"
+              onClick={handleExport}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          )}
         </div>
-        
-        {reportText && (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleExport}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-        )}
       </div>
       
-      <Card>
+      <CustomCard>
         <CardHeader>
           <CardTitle>AI-Assisted Spending Report</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading transaction data...</span>
+              <Loader2 className="h-8 w-8 animate-spin text-white" />
+              <span className="ml-2 text-white">Loading transaction data...</span>
             </div>
           ) : (
             <>
               {!reportText ? (
                 <div className="space-y-4">
-                  <p className="text-foreground">
+                  <p className="text-white">
                     Generate an AI-assisted spending analysis based on your transaction history.
                     This report will include spending patterns, top expense categories, and personalized recommendations.
                   </p>
@@ -204,14 +208,14 @@ This report was automatically generated based on your transaction data.
                   <Textarea 
                     value={reportText} 
                     onChange={(e) => setReportText(e.target.value)}
-                    className="min-h-[500px] font-mono whitespace-pre-wrap text-foreground"
+                    className="min-h-[500px] font-mono whitespace-pre-wrap text-white bg-background/30 border-white/30"
                   />
                   
                   <div className="flex justify-end">
                     <Button
                       variant="outline"
                       onClick={() => setReportText('')}
-                      className="mr-2"
+                      className="mr-2 text-white border-white/30 hover:bg-white/10"
                     >
                       Generate New Report
                     </Button>
@@ -226,7 +230,7 @@ This report was automatically generated based on your transaction data.
             </>
           )}
         </CardContent>
-      </Card>
+      </CustomCard>
     </div>
   );
 };
