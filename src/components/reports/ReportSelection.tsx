@@ -67,13 +67,13 @@ const ReportSelection: React.FC = () => {
         {reportTypes.map((report) => (
           <Card 
             key={report.id} 
-            className={`overflow-hidden transition-all hover:shadow-md ${report.comingSoon ? 'opacity-70' : 'cursor-pointer'}`}
+            className={`overflow-hidden transition-all hover:shadow-md bg-white ${report.comingSoon ? 'opacity-70' : 'cursor-pointer'}`}
             onClick={() => handleReportSelect(report.path, report.comingSoon)}
           >
-            <CardHeader className="flex flex-row items-start gap-4 pb-2">
+            <CardHeader className="flex flex-row items-start gap-4 pb-2 bg-white border-b">
               {report.icon}
               <div>
-                <CardTitle className="text-xl text-foreground">{report.title}</CardTitle>
+                <CardTitle className="text-xl text-black font-bold">{report.title}</CardTitle>
                 {report.comingSoon && (
                   <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1">
                     Coming Soon
@@ -82,9 +82,9 @@ const ReportSelection: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-sm text-foreground/70 mt-2">
+              <p className="text-sm text-black font-medium mt-2">
                 {report.description}
-              </CardDescription>
+              </p>
             </CardContent>
             <CardFooter>
               <Button 

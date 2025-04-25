@@ -25,9 +25,9 @@ const Reports = () => {
     if (currentPath === '/reports') {
       return (
         <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Reports & Analytics</h1>
-            <div className="text-sm text-foreground">
+          <div className="flex items-center justify-between bg-primary/10 p-4 rounded-lg">
+            <h1 className="text-3xl font-bold tracking-tight text-black">Reports & Analytics</h1>
+            <div className="text-sm text-black font-medium">
               {new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long'
