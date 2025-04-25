@@ -29,12 +29,11 @@ const reportTypes = [
     comingSoon: true
   },
   {
-    id: 'spending-trends',
-    title: 'Spending Trends Report',
-    description: 'Visualizes your spending patterns over time, highlighting seasonal variations and long-term trends in your financial behavior.',
+    id: 'financial-dashboard',
+    title: 'Financial Dashboard',
+    description: 'Interactive dashboard showing key metrics including income vs. expenses, spending trends, and category breakdowns over time.',
     icon: <TrendingUp className="h-8 w-8 text-primary" />,
-    path: '/reports/spending-trends',
-    comingSoon: true
+    path: '/reports/dashboard'
   },
   {
     id: 'budget-performance',
