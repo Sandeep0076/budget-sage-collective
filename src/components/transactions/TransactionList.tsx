@@ -133,13 +133,26 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
   const formattedStartDate = startDate.toISOString().split('T')[0];
   const formattedEndDate = endDate.toISOString().split('T')[0];
   
-  // Fetch transactions
-  const { data: transactions = [], isLoading } = useTransactions();
+  // Fetch transactions with date range
+  const { data: transactions = [], isLoading, refetch } = useTransactions({
+    startDate: formattedStartDate,
+    endDate: formattedEndDate
+  });
   
   // Get user's currency preference
   const userCurrency = profile?.currency || 'EUR';
   
   // Filter transactions based on search term and date range
+  // Apply date range changes and refetch data
+  const handleApplyDateRange = () => {
+    setShowDateFilter(false);
+    refetch();
+    toast({
+      title: 'Date range updated',
+      description: `Showing transactions from ${format(startDate, 'MMM dd, yyyy')} to ${format(endDate, 'MMM dd, yyyy')}`
+    });
+  };
+
   const filteredTransactions = useMemo(() => {
     if (!transactions) {
       console.log("No transactions data available");
@@ -160,14 +173,10 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
         transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (transaction.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       
-      const transactionDate = new Date(transaction.transaction_date);
-      const matchesDateRange = 
-        transactionDate >= startDate && 
-        transactionDate <= endDate;
-      
-      return matchesSearch && matchesDateRange;
+      // Transactions are already filtered by date from the API call
+      return matchesSearch;
     });
-  }, [transactions, searchTerm, startDate, endDate]);
+  }, [transactions, searchTerm]);
   
   // Function to delete a transaction
   const handleDelete = async (id: string) => {
@@ -275,25 +284,66 @@ const TransactionList: React.FC<TransactionListProps> = ({ onAddNew }) => {
     <CustomCard className="w-full">
       <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle>Transactions</CardTitle>
-        <div className="flex items-center space-x-2 flex-wrap gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search transactions..."
-              className="pl-8 w-full md:w-auto"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <DateRangeSelector 
-            startDate={startDate}
-            endDate={endDate}
-            setStartDate={setStartDate}
-            setEndDate={setEndDate}
-            showDateFilter={showDateFilter}
-            setShowDateFilter={setShowDateFilter}
+        <div className="flex items-center space-x-4 mb-6 flex-wrap gap-y-2">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search transactions..."
+            className="pl-8 w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+        
+        <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="justify-start text-left font-normal">
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {format(startDate, 'PPP')} - {format(endDate, 'PPP')}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent 
+            className="w-auto p-4 bg-popover text-popover-foreground border border-border shadow-md" 
+            align="start"
+            sideOffset={4}
+          >
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="space-y-2">
+                <div className="font-medium text-foreground text-sm">Start Date</div>
+                <div className="border border-border rounded-md overflow-hidden">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => date && setStartDate(date)}
+                    disabled={(date) => date > endDate || date > new Date()}
+                    className="bg-background text-foreground"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="font-medium text-foreground text-sm">End Date</div>
+                <div className="border border-border rounded-md overflow-hidden">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => date && setEndDate(date)}
+                    disabled={(date) => date < startDate || date > new Date()}
+                    className="bg-background text-foreground"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4 pt-3 border-t border-border">
+              <Button 
+                onClick={handleApplyDateRange}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Apply Range
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
           <Button onClick={onAddNew}>
             <Plus className="h-4 w-4 mr-2" />
             Add New
