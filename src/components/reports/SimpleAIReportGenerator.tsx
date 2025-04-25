@@ -140,8 +140,13 @@ This report was automatically generated based on your transaction data.
   };
   
   return (
-    <div className="space-y-6 animate-fade-in text-white">
-      <div className="relative rounded-xl overflow-hidden bg-background/30 text-white glass-effect shadow-subtle border border-white/30 p-5">
+    <div className="space-y-6 animate-fade-in" style={{ color: 'white' }}>
+      <div className="relative rounded-xl overflow-hidden p-5" style={{ 
+        backgroundColor: 'rgba(0, 116, 212, 0.6)', 
+        backdropFilter: 'blur(10px)',
+        color: 'white',
+        border: '1px solid rgba(255, 255, 255, 0.3)'
+      }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Button 
@@ -169,11 +174,18 @@ This report was automatically generated based on your transaction data.
         </div>
       </div>
       
-      <CustomCard>
-        <CardHeader>
-          <CardTitle>AI-Assisted Spending Report</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="relative rounded-xl overflow-hidden p-5" style={{ 
+        backgroundColor: 'rgba(0, 116, 212, 0.6)', 
+        backdropFilter: 'blur(10px)',
+        color: 'white',
+        border: '1px solid rgba(255, 255, 255, 0.3)'
+      }}>
+        <div className="pb-4">
+          <h3 className="text-lg font-semibold leading-none tracking-tight text-white">
+            AI-Assisted Spending Report
+          </h3>
+        </div>
+        <div className="space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-white" />
@@ -183,7 +195,7 @@ This report was automatically generated based on your transaction data.
             <>
               {!reportText ? (
                 <div className="space-y-4">
-                  <p className="text-white">
+                  <p style={{ color: 'white' }}>
                     Generate an AI-assisted spending analysis based on your transaction history.
                     This report will include spending patterns, top expense categories, and personalized recommendations.
                   </p>
@@ -208,14 +220,20 @@ This report was automatically generated based on your transaction data.
                   <Textarea 
                     value={reportText} 
                     onChange={(e) => setReportText(e.target.value)}
-                    className="min-h-[500px] font-mono whitespace-pre-wrap text-white bg-background/30 border-white/30"
+                    className="min-h-[500px] font-mono whitespace-pre-wrap"
+                    style={{ 
+                      color: 'white', 
+                      backgroundColor: 'rgba(0, 70, 130, 0.7)',
+                      border: '1px solid rgba(255, 255, 255, 0.3)'
+                    }}
                   />
                   
                   <div className="flex justify-end">
                     <Button
                       variant="outline"
                       onClick={() => setReportText('')}
-                      className="mr-2 text-white border-white/30 hover:bg-white/10"
+                      className="mr-2"
+                      style={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.3)' }}
                     >
                       Generate New Report
                     </Button>
@@ -229,8 +247,8 @@ This report was automatically generated based on your transaction data.
               )}
             </>
           )}
-        </CardContent>
-      </CustomCard>
+        </div>
+      </div>
     </div>
   );
 };
