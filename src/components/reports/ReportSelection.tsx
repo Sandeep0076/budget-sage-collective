@@ -73,7 +73,7 @@ const ReportSelection: React.FC = () => {
             <CardHeader className="flex flex-row items-start gap-4 pb-2">
               {report.icon}
               <div>
-                <CardTitle className="text-xl">{report.title}</CardTitle>
+                <CardTitle className="text-xl text-foreground">{report.title}</CardTitle>
                 {report.comingSoon && (
                   <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1">
                     Coming Soon
@@ -82,7 +82,7 @@ const ReportSelection: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-sm text-muted-foreground mt-2">
+              <CardDescription className="text-sm text-foreground/70 mt-2">
                 {report.description}
               </CardDescription>
             </CardContent>
@@ -91,6 +91,12 @@ const ReportSelection: React.FC = () => {
                 variant={report.comingSoon ? "outline" : "default"} 
                 className="w-full"
                 disabled={report.comingSoon}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!report.comingSoon) {
+                    navigate(report.path);
+                  }
+                }}
               >
                 {report.comingSoon ? 'Coming Soon' : 'Generate Report'}
               </Button>

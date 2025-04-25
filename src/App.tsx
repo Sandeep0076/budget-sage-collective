@@ -24,7 +24,7 @@ const App: React.FC = () => {
       <Route path="/auth" element={!isAuthenticated ? <Auth /> : <Navigate to="/dashboard" />} />
       <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/auth" />} />
       <Route path="/transactions" element={isAuthenticated ? <Transactions /> : <Navigate to="/auth" />} />
-      <Route path="/reports" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
+      <Route path="/reports/*" element={isAuthenticated ? <Reports /> : <Navigate to="/auth" />} />
       <Route path="/budgets" element={isAuthenticated ? <Budgets /> : <Navigate to="/auth" />} />
       <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/auth" />} />
       <Route path="/scan-receipt" element={isAuthenticated ? <ScanReceipt /> : <Navigate to="/auth" />} />
