@@ -25,8 +25,7 @@ const reportTypes = [
     title: 'Category Breakdown Report',
     description: 'Detailed analysis of spending within each category, showing subcategories and individual transactions. Identifies your top spending categories.',
     icon: <PieChart className="h-8 w-8 text-primary" />,
-    path: '/reports/category-breakdown',
-    comingSoon: true
+    path: '/reports/category-breakdown'
   },
   {
     id: 'financial-dashboard',

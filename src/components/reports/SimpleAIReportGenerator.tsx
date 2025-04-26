@@ -148,17 +148,9 @@ This report was automatically generated based on your transaction data.
         border: '1px solid rgba(255, 255, 255, 0.3)'
       }}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-white hover:text-white hover:bg-white/10"
-              onClick={() => navigate('/reports')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Reports
-            </Button>
-          </div>
+          <h3 className="text-lg font-bold leading-none tracking-tight text-white">
+            AI-Assisted Spending Report
+          </h3>
           
           {reportText && (
             <Button 
@@ -180,11 +172,6 @@ This report was automatically generated based on your transaction data.
         color: 'white',
         border: '1px solid rgba(255, 255, 255, 0.3)'
       }}>
-        <div className="pb-4">
-          <h3 className="text-lg font-semibold leading-none tracking-tight text-white">
-            AI-Assisted Spending Report
-          </h3>
-        </div>
         <div className="space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">

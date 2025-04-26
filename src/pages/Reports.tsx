@@ -1,4 +1,3 @@
-
 /**
  * Reports Page
  * 
@@ -13,6 +12,9 @@ import ReportSelection from '@/components/reports/ReportSelection';
 import SpendingSummaryReport from '@/components/reports/SpendingSummaryReport';
 import SimpleAIReportGenerator from '@/components/reports/SimpleAIReportGenerator';
 import FinancialReports from '@/components/reports/FinancialReports';
+import EnhancedSpendingReport from '@/components/reports/EnhancedSpendingReport';
+import CategoryBreakdownReport from '@/components/reports/CategoryBreakdownReport';
+import { Container, Typography, Box } from '@mui/material';
 
 const Reports = () => {
   const location = useLocation();
@@ -44,7 +46,27 @@ const Reports = () => {
     
     // Spending Summary Report
     if (currentPath === '/reports/spending-summary') {
-      return <SimpleAIReportGenerator />;
+      return (
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          {/* Single heading for the entire page */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Total Spending
+            </Typography>
+          </Box>
+
+          {/* Enhanced Spending Report - Moved to top */}
+          <EnhancedSpendingReport />
+
+          {/* AI Report Generator - Moved down */}
+          <SimpleAIReportGenerator />
+        </Container>
+      );
+    }
+    
+    // Category Breakdown Report
+    if (currentPath === '/reports/category-breakdown') {
+      return <CategoryBreakdownReport />;
     }
     
     // Financial Dashboard
